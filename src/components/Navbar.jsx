@@ -1,5 +1,6 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { NavLink, useNavigate } from "react-router-dom";
+import { FiSearch } from "react-icons/fi"; // ✅ clean magnifying glass
 
 export default function Navbar({
   onOpenAuth,
@@ -8,147 +9,154 @@ export default function Navbar({
   onSearch,
   user,
   onLogout,
-  onLanguageChange, // ✅ Parent se callback aayega
+  onLanguageChange,
 }) {
   const [query, setQuery] = useState("");
   const [openDropdown, setOpenDropdown] = useState(false);
-  const [language, setLanguage] = useState("en"); // ✅ Default English
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [mobileSearchOpen, setMobileSearchOpen] = useState(false);
+  const [language, setLanguage] = useState("en");
   const navigate = useNavigate();
+
+  // close search with ESC
+  useEffect(() => {
+    const onKey = (e) => { if (e.key === "Escape") setMobileSearchOpen(false); };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, []);
 
   const handleKeyDown = (e) => {
     if (e.key === "Enter") {
-      onSearch(query);
+      onSearch?.(query);
       navigate("/");
+      setMobileSearchOpen(false);
     }
   };
 
-  // Logo click handler
-  const handleLogoClick = () => {
-    navigate("/");
-  };
+  const handleLogoClick = () => navigate("/");
 
-  // ✅ Avatar select logic
   const getUserAvatar = () => {
-    if (!user) {
-      return "https://upload.wikimedia.org/wikipedia/commons/0/0b/Netflix-avatar.png";
-    }
+    if (!user) return "https://upload.wikimedia.org/wikipedia/commons/0/0b/Netflix-avatar.png";
     if (user.photoURL) return user.photoURL;
     if (user.email) {
-      return `https://ui-avatars.com/api/?name=${encodeURIComponent(
-        user.email[0].toUpperCase()
-      )}&background=random&color=fff`;
+      return `https://ui-avatars.com/api/?name=${encodeURIComponent(user.email[0].toUpperCase())}&background=random&color=fff`;
     }
     if (user.phoneNumber) {
-      return `https://ui-avatars.com/api/?name=${encodeURIComponent(
-        user.phoneNumber
-      )}&background=random&color=fff`;
+      return `https://ui-avatars.com/api/?name=${encodeURIComponent(user.phoneNumber)}&background=random&color=fff`;
     }
     return "https://upload.wikimedia.org/wikipedia/commons/0/0b/Netflix-avatar.png";
   };
 
-  // ✅ Language change handler
   const handleLanguageChange = (e) => {
     const selectedLang = e.target.value;
     setLanguage(selectedLang);
-    if (onLanguageChange) {
-      onLanguageChange(selectedLang); // parent ko inform karega
-    }
+    onLanguageChange?.(selectedLang);
+  };
+
+  const toggleMobileMenu = () => {
+    setMobileMenuOpen((s) => {
+      const next = !s;
+      if (next) setMobileSearchOpen(false);
+      return next;
+    });
+  };
+
+  const toggleMobileSearch = () => {
+    setMobileSearchOpen((s) => {
+      const next = !s;
+      if (next) setMobileMenuOpen(false);
+      return next;
+    });
   };
 
   return (
     <div
-      className={`w-full py-3 sticky top-0 z-40 backdrop-blur-md shadow-md ${
-        isLight ? "bg-white/95 text-black" : "bg-black/95 text-white"
+      className={`w-full sticky top-0 z-40 backdrop-blur-md shadow-md ${
+        isLight ? "bg-white/95 text-black" : "bg-black/90 text-white"
       }`}
     >
-      <div className="container flex items-center justify-between">
-        {/* Left Section with Logo + Menu */}
-        <div className="flex items-center gap-8">
+      {/* top bar */}
+      <div className="container flex items-center justify-between gap-3 py-2 sm:py-3">
+        {/* Left: Burger + Logo */}
+        <div className="flex items-center gap-3">
+          {/* Hamburger (md:hidden) */}
+          <button
+            className="md:hidden h-9 w-9 grid place-items-center rounded bg-white/10 hover:bg-white/20 flex-shrink-0"
+            aria-label="Toggle menu"
+            onClick={toggleMobileMenu}
+          >
+            ☰
+          </button>
+
           {/* Logo */}
           <h1
-            className="text-4xl font-extrabold tracking-wide cursor-pointer"
+            className="text-3xl sm:text-4xl font-extrabold tracking-wide cursor-pointer select-none whitespace-nowrap"
             onClick={handleLogoClick}
           >
             <span className="text-[#e50914]">SAWANT</span>
             <span className={isLight ? "text-black" : "text-white"}>FLIX</span>
           </h1>
 
-          {/* Menu */}
-          <ul className="hidden md:flex items-center gap-6 text-sm font-medium">
-            <li>
-              <NavLink
-                to="/"
-                className={({ isActive }) =>
-                  isActive ? "text-red-500 font-bold" : "hover:text-red-500"
-                }
-              >
-                Home
-              </NavLink>
-            </li>
-            <li>
-              <NavLink
-                to="/tv"
-                className={({ isActive }) =>
-                  isActive ? "text-red-500 font-bold" : "hover:text-red-500"
-                }
-              >
-                TV Shows
-              </NavLink>
-            </li>
-            <li>
-              <NavLink
-                to="/movies"
-                className={({ isActive }) =>
-                  isActive ? "text-red-500 font-bold" : "hover:text-red-500"
-                }
-              >
-                Movies
-              </NavLink>
-            </li>
-            <li>
-              <NavLink
-                to="/new"
-                className={({ isActive }) =>
-                  isActive ? "text-red-500 font-bold" : "hover:text-red-500"
-                }
-              >
-                New & Popular
-              </NavLink>
-            </li>
-            <li>
-              <NavLink
-                to="/my-list"
-                className={({ isActive }) =>
-                  isActive ? "text-red-500 font-bold" : "hover:text-red-500"
-                }
-              >
-                My List
-              </NavLink>
-            </li>
+          {/* Desktop menu */}
+          <ul className="hidden md:flex items-center gap-6 text-sm font-medium ml-6">
+            {[
+              { to: "/", label: "Home" },
+              { to: "/tv", label: "TV Shows" },
+              { to: "/movies", label: "Movies" },
+              { to: "/new", label: "New & Popular" },
+              { to: "/my-list", label: "My List" },
+            ].map((item) => (
+              <li key={item.to}>
+                <NavLink
+                  to={item.to}
+                  className={({ isActive }) =>
+                    isActive ? "text-red-500 font-bold" : "hover:text-red-500"
+                  }
+                >
+                  {item.label}
+                </NavLink>
+              </li>
+            ))}
           </ul>
         </div>
 
-        {/* Right Side */}
-        <div className="flex items-center gap-4">
-          {/* Search */}
-          <input
-            id="search"
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            onKeyDown={handleKeyDown}
-            className={`px-4 py-1.5 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-red-600 transition ${
-              isLight
-                ? "bg-gray-200 text-black placeholder-gray-600"
-                : "bg-gray-800 text-white placeholder-gray-400"
-            }`}
-            placeholder="Search..."
-          />
+        {/* Right: search + lang + auth/profile */}
+        <div className="flex items-center gap-2 sm:gap-4 flex-shrink-0">
+          {/* Mobile search icon (react-icons) */}
+          <button
+            className="md:hidden h-9 w-9 grid place-items-center rounded-full bg-white/10 hover:bg-white/20 flex-shrink-0 transition"
+            aria-label="Search"
+            onClick={toggleMobileSearch}
+          >
+            <FiSearch className={`w-5 h-5 ${isLight ? "text-gray-700" : "text-white"}`} />
+          </button>
 
-          {/* ✅ Language Selector */}
+          {/* Desktop search input with leading icon */}
+          <div className="hidden md:flex items-center relative">
+            <FiSearch
+              className={`absolute left-3 w-5 h-5 pointer-events-none ${
+                isLight ? "text-gray-600" : "text-gray-400"
+              }`}
+            />
+            <input
+              id="search"
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              onKeyDown={handleKeyDown}
+              className={`pl-10 pr-3 py-1.5 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-red-600 transition w-48 lg:w-64 min-w-0 ${
+                isLight
+                  ? "bg-gray-200 text-black placeholder-gray-600"
+                  : "bg-gray-800 text-white placeholder-gray-400"
+              }`}
+              placeholder="Search..."
+            />
+          </div>
+
+          {/* Language (hide on very small screens) */}
           <select
             value={language}
             onChange={handleLanguageChange}
-            className={`px-2 py-1 rounded-md text-sm focus:outline-none border ${
+            className={`hidden sm:block px-2 py-1 rounded-md text-sm focus:outline-none border flex-shrink-0 ${
               isLight
                 ? "bg-gray-200 text-black border-gray-400"
                 : "bg-gray-800 text-white border-gray-600"
@@ -161,32 +169,29 @@ export default function Navbar({
             <option value="fr">Français</option>
           </select>
 
-          {/* If User not logged in */}
-          {!user && (
+          {/* Auth buttons / Profile */}
+          {!user ? (
             <div className="flex items-center gap-2">
               <button
-                className="px-4 py-1.5 rounded-md bg-red-600 text-white font-semibold hover:bg-red-700 transition"
+                className="px-3 sm:px-4 py-1.5 rounded-md bg-red-600 text-white font-semibold hover:bg-red-700 transition"
                 onClick={() => onOpenAuth("signin")}
               >
                 Sign In
               </button>
               <button
-                className="px-4 py-1.5 rounded-md border border-gray-500 text-sm hover:bg-gray-700 hover:text-white transition"
+                className="hidden sm:inline-block px-4 py-1.5 rounded-md border border-gray-500 text-sm hover:bg-gray-700 hover:text-white transition"
                 onClick={() => onOpenAuth("signup")}
               >
                 Sign Up
               </button>
             </div>
-          )}
-
-          {/* Avatar Dropdown */}
-          {user && (
+          ) : (
             <div className="relative">
               <img
                 src={getUserAvatar()}
                 alt="profile"
-                className="w-10 h-10 rounded-md cursor-pointer object-cover"
-                onClick={() => setOpenDropdown(!openDropdown)}
+                className="w-9 h-9 sm:w-10 sm:h-10 rounded-md cursor-pointer object-cover"
+                onClick={() => setOpenDropdown((o) => !o)}
               />
 
               {openDropdown && (
@@ -197,11 +202,8 @@ export default function Navbar({
                       : "bg-gray-900 text-white border-gray-700"
                   }`}
                 >
-                  {/* Profile Info */}
                   <div className="px-4 py-3 text-sm border-b border-gray-600 truncate">
-                    {user.displayName
-                      ? user.displayName
-                      : user.email || user.phoneNumber}
+                    {user.displayName || user.email || user.phoneNumber}
                   </div>
 
                   <button className="w-full text-left px-4 py-2 text-sm hover:bg-gray-700 transition">
@@ -210,15 +212,12 @@ export default function Navbar({
                   <button className="w-full text-left px-4 py-2 text-sm hover:bg-gray-700 transition">
                     📺 Account
                   </button>
-
-                  {/* Payment Option */}
                   <button
                     className="w-full text-left px-4 py-2 text-sm hover:bg-gray-700 transition"
                     onClick={() => navigate("/account/payment")}
                   >
                     💳 Payment
                   </button>
-
                   <button className="w-full text-left px-4 py-2 text-sm hover:bg-gray-700 transition">
                     ❓ Help Center
                   </button>
@@ -238,6 +237,83 @@ export default function Navbar({
               )}
             </div>
           )}
+        </div>
+      </div>
+
+      {/* Mobile search bar (animated slide-down) */}
+      <div
+        className={`md:hidden border-t border-white/10 transition-all duration-300 overflow-hidden ${
+          mobileSearchOpen ? "max-h-24 opacity-100" : "max-h-0 opacity-0"
+        }`}
+      >
+        <div className="container py-2">
+          <div className="relative">
+            <FiSearch className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+            <input
+              autoFocus={mobileSearchOpen}
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              onKeyDown={handleKeyDown}
+              className={`w-full pl-10 pr-3 py-2 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-red-600 ${
+                isLight
+                  ? "bg-gray-200 text-black placeholder-gray-600"
+                  : "bg-gray-800 text-white placeholder-gray-400"
+              }`}
+              placeholder="Search..."
+            />
+          </div>
+        </div>
+      </div>
+
+      {/* Mobile menu (animated slide-down) */}
+      <div
+        className={`md:hidden border-t border-white/10 transition-all duration-300 overflow-hidden ${
+          mobileMenuOpen ? "max-h-96 opacity-100" : "max-h-0 opacity-0"
+        }`}
+      >
+        <div className="container py-3">
+          <ul className="flex flex-col gap-2 text-sm">
+            {[
+              { to: "/", label: "Home" },
+              { to: "/tv", label: "TV Shows" },
+              { to: "/movies", label: "Movies" },
+              { to: "/new", label: "New & Popular" },
+              { to: "/my-list", label: "My List" },
+            ].map((item) => (
+              <li key={item.to}>
+                <NavLink
+                  to={item.to}
+                  onClick={() => setMobileMenuOpen(false)}
+                  className={({ isActive }) =>
+                    `block px-2 py-2 rounded ${
+                      isActive ? "text-red-500 font-bold" : "hover:bg-white/10"
+                    }`
+                  }
+                >
+                  {item.label}
+                </NavLink>
+              </li>
+            ))}
+
+            {/* Language in mobile menu */}
+            <li className="pt-2">
+              <select
+                value={language}
+                onChange={handleLanguageChange}
+                className={`w-full px-2 py-2 rounded-md text-sm focus:outline-none border ${
+                  isLight
+                    ? "bg-gray-200 text-black border-gray-400"
+                    : "bg-gray-800 text-white border-gray-600"
+                }`}
+              >
+                <option value="en">English</option>
+                <option value="hi">हिन्दी</option>
+                <option value="mr">मराठी</option>
+                <option value="es">Español</option>
+                <option value="fr">Français</option>
+              </select>
+            </li>
+          </ul>
         </div>
       </div>
     </div>

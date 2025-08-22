@@ -2,11 +2,7 @@ import React from "react";
 import { useNavigate } from "react-router-dom";
 
 // Example dummy movies (baad me API se laa sakte ho)
-const dummyMovies = [
-  { id: 1, title: "Movie 1", poster: "https://image.tmdb.org/t/p/w200/xyz1.jpg" },
-  { id: 2, title: "Movie 2", poster: "https://image.tmdb.org/t/p/w200/xyz2.jpg" },
-  { id: 3, title: "Movie 3", poster: "https://image.tmdb.org/t/p/w200/xyz3.jpg" },
-];
+
 
 export default function Movies({ user }) {
   const navigate = useNavigate();
