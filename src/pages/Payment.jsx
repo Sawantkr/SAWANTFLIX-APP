@@ -78,7 +78,7 @@ export default function Payment({ isLight }) {
       >
         <h1 className="text-3xl font-bold mb-2">Manage Subscription & Payment</h1>
         <p className={`${isLight ? "text-gray-600" : "text-gray-400"} mb-8`}>
-          Update your payment method, view billing history, and manage your Netflix plan.
+          Update your payment method, view billing history, and manage your SAWANTFLIX plan.
         </p>
 
         {/* Plans Section */}

@@ -52,8 +52,6 @@ export default function App() {
   // Firebase Auth listener
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, (u) => {
-      // 🔹 yahan tum backend se subscription status bhi fetch kar sakte ho
-      // Abhi ke liye hardcode kar raha hu
       if (u) {
         setUser({ ...u, isSubscribed: false }) // ✅ test ke liye false
       } else {
@@ -118,7 +116,8 @@ export default function App() {
           path="/"
           element={
             <main className="container mx-auto px-4 pt-20">
-              <Banner movie={trending[0]} />
+              {/* 🔁 CHANGE: single movie se array + interval */}
+              <Banner movies={trending} interval={4000} />
               <div className="mt-8 space-y-8">
                 <Row title="Trending Now" movies={trending} onOpen={openMovie} />
                 <Row title="Top Rated" movies={topRated} onOpen={openMovie} />
@@ -137,7 +136,6 @@ export default function App() {
 
         {/* Other Pages */}
         <Route path="/tv" element={<TVShows />} />
-        {/* ✅ user prop pass kiya */}
         <Route path="/movies" element={<Movies user={user} />} /> 
         <Route path="/new" element={<NewPopular />} />
         <Route path="/my-list" element={<MyList />} />
