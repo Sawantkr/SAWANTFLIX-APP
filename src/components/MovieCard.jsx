@@ -1,65 +1,104 @@
-import React, { useEffect, useState } from "react"
-import { IMAGE } from "../api/tmdb"
+import React, { useEffect, useState } from "react";
+import { IMAGE } from "../api/tmdb";
 
 export default function MovieCard({ movie, onOpen }) {
-  const [added, setAdded] = useState(false)
+  const [added, setAdded] = useState(false);
+  const [mobileActions, setMobileActions] = useState(false); // mobile quick-actions
 
-  // Check agar already "My List" me hai
+  // already in My List?
   useEffect(() => {
-    const saved = JSON.parse(localStorage.getItem("myList")) || []
-    setAdded(saved.some((m) => m.id === movie.id))
-  }, [movie.id])
+    const saved = JSON.parse(localStorage.getItem("myList")) || [];
+    setAdded(saved.some((m) => m.id === movie.id));
+  }, [movie.id]);
 
-  // Add/Remove My List
-  const handleToggle = (e) => {
-    e.stopPropagation() // Poster click se trailer open na ho
-    let saved = JSON.parse(localStorage.getItem("myList")) || []
-
+  const toggleMyList = (e) => {
+    e.stopPropagation();
+    let saved = JSON.parse(localStorage.getItem("myList")) || [];
     if (added) {
-      saved = saved.filter((m) => m.id !== movie.id)
+      saved = saved.filter((m) => m.id !== movie.id);
     } else {
-      saved.push(movie)
+      saved.push(movie);
     }
+    localStorage.setItem("myList", JSON.stringify(saved));
+    setAdded(!added);
+  };
 
-    localStorage.setItem("myList", JSON.stringify(saved))
-    setAdded(!added)
-  }
+  const openInfo = (e) => {
+    e.stopPropagation();
+    onOpen?.(movie);
+    setMobileActions(false);
+  };
 
   return (
     <div
-      className="w-36 md:w-44 relative group cursor-pointer"
-      onClick={() => onOpen(movie)}
+      className="movie-card relative w-28 sm:w-36 md:w-44 lg:w-52 cursor-pointer group select-none"
+      onClick={() => onOpen?.(movie)}
     >
       {/* Poster */}
       <img
         src={IMAGE(movie.poster_path)}
-        alt={movie.title}
-        className="rounded-lg shadow-lg transition-transform duration-300 group-hover:scale-110"
+        alt={movie.title || movie.name}
+        className="w-full h-auto rounded-lg shadow-lg"
+        draggable={false}
       />
 
-      {/* Overlay on hover */}
-      <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center rounded-lg">
-        <div className="relative flex flex-col items-center">
+      {/* Desktop (md+) hover overlay */}
+      <div className="hidden md:flex absolute inset-0 rounded-lg bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity duration-200 items-center justify-center">
+        <div className="flex gap-2">
           <button
-            onClick={handleToggle}
-            className={`p-2 rounded-full shadow-lg transition-all duration-300 ${
-              added
-                ? "bg-green-500 hover:bg-green-600"
-                : "bg-gray-800 hover:bg-red-600"
-            } text-white text-lg`}
+            onClick={toggleMyList}
+            className={`px-3 py-1 rounded-md text-sm font-medium ${
+              added ? "bg-green-600" : "bg-gray-800 hover:bg-red-600"
+            }`}
           >
-            {added ? "✓" : "+"}
+            {added ? "✓ My List" : "+ My List"}
           </button>
-
-          {/* Tooltip */}
-          <span className="absolute top-12 text-xs px-2 py-1 rounded-md bg-black text-white opacity-0 group-hover:opacity-100 transition-opacity duration-300 whitespace-nowrap">
-            {added ? "Remove from My List" : "Add to My List"}
-          </span>
+          <button
+            onClick={openInfo}
+            className="px-3 py-1 rounded-md text-sm font-medium bg-white/90 text-black hover:bg-white"
+          >
+            Details
+          </button>
         </div>
       </div>
 
+      {/* Mobile (sm-) quick actions trigger */}
+      <button
+        className="md:hidden absolute top-1.5 right-1.5 h-7 w-7 grid place-items-center rounded-full bg-black/60 text-white text-sm active:scale-95"
+        onClick={(e) => {
+          e.stopPropagation();
+          setMobileActions((s) => !s);
+        }}
+        aria-label="More actions"
+      >
+        ⋯
+      </button>
+
+      {/* Mobile actions popover */}
+      {mobileActions && (
+        <div
+          className="md:hidden absolute top-9 right-1.5 z-10 w-32 rounded-lg bg-black/85 border border-white/10 p-1 shadow-lg"
+          onClick={(e) => e.stopPropagation()}
+        >
+          <button
+            onClick={toggleMyList}
+            className="w-full text-left px-2 py-1 text-sm rounded hover:bg-white/10"
+          >
+            {added ? "✓ Remove" : "+ My List"}
+          </button>
+          <button
+            onClick={openInfo}
+            className="w-full text-left px-2 py-1 text-sm rounded hover:bg-white/10"
+          >
+            Details
+          </button>
+        </div>
+      )}
+
       {/* Title */}
-      <p className="mt-2 text-sm truncate text-center">{movie.title}</p>
+      <p className="mt-2 text-xs sm:text-sm truncate text-center">
+        {movie.title || movie.name}
+      </p>
     </div>
-  )
+  );
 }

@@ -5,11 +5,14 @@
 :root {
   --bg-dark: #0b0b0b;
   --bg-light: #f3f4f6;
+  --netflix-red: #e50914;
 }
 
+/* Body defaults */
 body {
-  @apply bg-black text-white;
-  overflow-x: hidden; /* ✅ side scroll issue fix */
+  @apply bg-black text-white antialiased;
+  overflow-x: hidden; /* ✅ prevent side scroll */
+  font-family: "Inter", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
 }
 
 body.light {
@@ -26,11 +29,53 @@ body.light {
   display: none;
 }
 .scrollbar-hide {
-  -ms-overflow-style: none; /* IE/Edge */
+  -ms-overflow-style: none; /* IE & Edge */
   scrollbar-width: none;    /* Firefox */
 }
 
 /* smooth scrolling globally */
 html {
   scroll-behavior: smooth;
+}
+
+/* ===== Netflix-style focus/hover accent ===== */
+input:focus,
+select:focus,
+textarea:focus {
+  outline: none !important;
+  box-shadow: 0 0 0 2px var(--netflix-red) !important;
+  border-color: var(--netflix-red) !important;
+}
+
+/* Hover link color like Netflix */
+a:hover {
+  color: var(--netflix-red);
+  transition: color 0.2s ease-in-out;
+}
+
+/* ===== Custom buttons ===== */
+.btn-red {
+  @apply bg-red-600 text-white font-semibold px-4 py-2 rounded-md transition;
+}
+.btn-red:hover {
+  @apply bg-red-700;
+}
+.btn-outline {
+  @apply border border-gray-500 text-sm rounded-md px-4 py-2 transition;
+}
+.btn-outline:hover {
+  @apply bg-gray-700 text-white;
+}
+
+/* ===== MovieCard hover zoom smoothness ===== */
+.movie-card img {
+  @apply transition-transform duration-300 ease-out;
+}
+.movie-card:hover img {
+  @apply scale-105;
+}
+
+/* ===== Dark overlay gradient (banner/footer use) ===== */
+.overlay-gradient {
+  background: linear-gradient(to top, rgba(0,0,0,0.9) 10%, rgba(0,0,0,0.3) 60%, transparent 100%);
 }
