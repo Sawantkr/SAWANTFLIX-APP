@@ -15,7 +15,9 @@ import TVShows from "./pages/TVShows"
 import Movies from "./pages/Movies"
 import NewPopular from "./pages/NewPopular"
 import MyList from "./pages/MyList"
-import Payment from "./pages/Payment"   // ✅ Payment page import
+import Payment from "./pages/Payment"   
+import MovieDetail from "./pages/MovieDetail"
+
 
 export default function App() {
   const [trending, setTrending] = useState([])
@@ -53,7 +55,7 @@ export default function App() {
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, (u) => {
       if (u) {
-        setUser({ ...u, isSubscribed: false }) // ✅ test ke liye false
+        setUser({ ...u, isSubscribed: false }) 
       } else {
         setUser(null)
       }
@@ -139,6 +141,8 @@ export default function App() {
         <Route path="/movies" element={<Movies user={user} />} /> 
         <Route path="/new" element={<NewPopular />} />
         <Route path="/my-list" element={<MyList />} />
+        <Route path="/movies/:id" element={<MovieDetail />} />
+
 
         {/* ✅ Payment Page */}
         <Route path="/account/payment" element={<Payment />} />

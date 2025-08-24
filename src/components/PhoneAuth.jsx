@@ -9,7 +9,7 @@ export default function PhoneAuth({ onClose }) {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState("")
 
-  // 🔹 Recaptcha setup
+  //  Recaptcha setup
   const setupRecaptcha = () => {
     if (!window.recaptchaVerifier) {
       window.recaptchaVerifier = new RecaptchaVerifier(
@@ -23,7 +23,7 @@ export default function PhoneAuth({ onClose }) {
     }
   }
 
-  // 🔹 Send OTP
+  //  Send OTP
   const sendOtp = async () => {
     try {
       setLoading(true)
@@ -41,7 +41,7 @@ export default function PhoneAuth({ onClose }) {
     }
   }
 
-  // 🔹 Verify OTP
+  //  Verify OTP
   const verifyOtp = async () => {
     try {
       setLoading(true)
