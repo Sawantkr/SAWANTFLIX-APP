@@ -4,13 +4,13 @@ import MovieCard from "../components/MovieCard"
 export default function MyList() {
   const [myList, setMyList] = useState([])
 
-  // LocalStorage se movies load karna
+
   useEffect(() => {
     const saved = JSON.parse(localStorage.getItem("myList")) || []
     setMyList(saved)
   }, [])
 
-  // Movie details (Netflix jaisa modal future feature)
+  
   const handleOpen = (movie) => {
     alert(`Open details for ${movie.title}`)
   }

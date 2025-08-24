@@ -3,9 +3,9 @@ import { IMAGE } from "../api/tmdb";
 
 export default function MovieCard({ movie, onOpen }) {
   const [added, setAdded] = useState(false);
-  const [mobileActions, setMobileActions] = useState(false); // mobile quick-actions
+  const [mobileActions, setMobileActions] = useState(false); 
 
-  // already in My List?
+
   useEffect(() => {
     const saved = JSON.parse(localStorage.getItem("myList")) || [];
     setAdded(saved.some((m) => m.id === movie.id));
@@ -42,7 +42,6 @@ export default function MovieCard({ movie, onOpen }) {
         draggable={false}
       />
 
-      {/* Desktop (md+) hover overlay */}
       <div className="hidden md:flex absolute inset-0 rounded-lg bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity duration-200 items-center justify-center">
         <div className="flex gap-2">
           <button

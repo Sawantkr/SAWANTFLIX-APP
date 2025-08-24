@@ -1,20 +1,20 @@
-// src/pages/Payment.jsx
+
 import React, { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import { API_BASE } from "../config"; 
 
 export default function Payment({ isLight }) {
   const [currentPlan, setCurrentPlan] = useState(null);
   const [showHistory, setShowHistory] = useState(false);
-
   const [billingHistory, setBillingHistory] = useState([]);
 
   const plans = [
-    { id: "basic",    name: "Basic",    price: 19, quality: "720p",     screens: 1 },
-    { id: "standard", name: "Standard", price: 29, quality: "1080p",    screens: 2 },
-    { id: "premium",  name: "Premium",  price: 49, quality: "4K + HDR", screens: 4 },
+    { id: "basic", name: "Basic", price: 19, quality: "720p", screens: 1 },
+    { id: "standard", name: "Standard", price: 29, quality: "1080p", screens: 2 },
+    { id: "premium", name: "Premium", price: 49, quality: "4K + HDR", screens: 4 },
   ];
 
-  const selectedPlan = plans.find(p => p.id === currentPlan) || null;
+  const selectedPlan = plans.find((p) => p.id === currentPlan) || null;
 
   async function ensureRazorpay() {
     if (window.Razorpay) return;
@@ -29,7 +29,7 @@ export default function Payment({ isLight }) {
 
   const handlePayment = async (amount, planId) => {
     try {
-      const res = await fetch("/api/create-order", {
+      const res = await fetch(`${API_BASE}/api/create-order`, { 
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ amount }),
@@ -49,11 +49,11 @@ export default function Payment({ isLight }) {
       const options = {
         key: keyId,
         order_id: orderId,
-        amount: paise,                  
+        amount: paise,
         currency,
         name: "SAWANTFLIX",
         description: "Subscription Payment",
-        method: "upi",                   
+        method: "upi",
         prefill: { email: "user@example.com", contact: "9999999999" },
         theme: { color: "#E50914" },
 
@@ -61,7 +61,7 @@ export default function Payment({ isLight }) {
           alert("✅ Payment Successful! Payment ID: " + response.razorpay_payment_id);
           setCurrentPlan(planId);
 
-          setBillingHistory(prev => [
+          setBillingHistory((prev) => [
             {
               id: response.razorpay_payment_id,
               date: new Date().toISOString().slice(0, 10),
@@ -78,7 +78,7 @@ export default function Payment({ isLight }) {
 
       rzp.on("payment.failed", (resp) => {
         alert("❌ Payment Failed:\n" + JSON.stringify(resp.error, null, 2));
-        setBillingHistory(prev => [
+        setBillingHistory((prev) => [
           {
             id: resp?.error?.metadata?.payment_id || `txn_${Date.now()}`,
             date: new Date().toISOString().slice(0, 10),
@@ -129,8 +129,12 @@ export default function Payment({ isLight }) {
             >
               <h3 className="text-lg font-bold mb-2">{plan.name}</h3>
               <p className={`${isLight ? "text-gray-700" : "text-gray-300"}`}>₹{plan.price} / month</p>
-              <p className={`${isLight ? "text-gray-600" : "text-gray-400"} text-sm`}>Quality: {plan.quality}</p>
-              <p className={`${isLight ? "text-gray-600" : "text-gray-400"} text-sm mb-4`}>Screens: {plan.screens}</p>
+              <p className={`${isLight ? "text-gray-600" : "text-gray-400"} text-sm`}>
+                Quality: {plan.quality}
+              </p>
+              <p className={`${isLight ? "text-gray-600" : "text-gray-400"} text-sm mb-4`}>
+                Screens: {plan.screens}
+              </p>
 
               <button
                 onClick={(e) => {
@@ -158,7 +162,8 @@ export default function Payment({ isLight }) {
               isLight ? "bg-gray-200 hover:bg-gray-300 text-black" : "bg-zinc-700 hover:bg-zinc-600 text-white"
             } ${!selectedPlan ? "opacity-60 cursor-not-allowed" : ""}`}
           >
-            🪙 Pay via UPI (Test) — {selectedPlan ? `Pay ₹${selectedPlan.price}` : "Select a plan"}
+            🪙 Pay via UPI (Test) —{" "}
+            {selectedPlan ? `Pay ₹${selectedPlan.price}` : "Select a plan"}
           </button>
 
           <button
@@ -198,7 +203,11 @@ export default function Payment({ isLight }) {
               ) : (
                 <table className="w-full text-left border-collapse">
                   <thead>
-                    <tr className={`${isLight ? "border-b border-gray-300" : "border-b border-zinc-700"}`}>
+                    <tr
+                      className={`${
+                        isLight ? "border-b border-gray-300" : "border-b border-zinc-700"
+                      }`}
+                    >
                       <th className="p-3">Transaction ID</th>
                       <th className="p-3">Date</th>
                       <th className="p-3">Amount</th>
@@ -208,12 +217,21 @@ export default function Payment({ isLight }) {
                   </thead>
                   <tbody>
                     {billingHistory.map((txn) => (
-                      <tr key={txn.id} className={`${isLight ? "border-b border-gray-200" : "border-b border-zinc-800"}`}>
+                      <tr
+                        key={txn.id}
+                        className={`${
+                          isLight ? "border-b border-gray-200" : "border-b border-zinc-800"
+                        }`}
+                      >
                         <td className="p-3">{txn.id}</td>
                         <td className="p-3">{txn.date}</td>
                         <td className="p-3">{txn.amount}</td>
                         <td className="p-3">{txn.method}</td>
-                        <td className={`p-3 font-medium ${txn.status === "Success" ? "text-green-500" : "text-red-500"}`}>
+                        <td
+                          className={`p-3 font-medium ${
+                            txn.status === "Success" ? "text-green-500" : "text-red-500"
+                          }`}
+                        >
                           {txn.status}
                         </td>
                       </tr>
@@ -225,7 +243,9 @@ export default function Payment({ isLight }) {
               <button
                 onClick={() => setShowHistory(false)}
                 className={`absolute top-3 right-3 text-xl ${
-                  isLight ? "text-gray-500 hover:text-black" : "text-gray-400 hover:text-white"
+                  isLight
+                    ? "text-gray-500 hover:text-black"
+                    : "text-gray-400 hover:text-white"
                 }`}
               >
                 ✖

@@ -13,9 +13,9 @@ export default function PhoneAuth({ onClose }) {
   const setupRecaptcha = () => {
     if (!window.recaptchaVerifier) {
       window.recaptchaVerifier = new RecaptchaVerifier(
-        "recaptcha-container", // id of div
+        "recaptcha-container", 
         {
-          size: "invisible", // invisible so user won’t see
+          size: "invisible", 
           callback: () => console.log("Recaptcha resolved ✅"),
         },
         auth
@@ -75,7 +75,7 @@ export default function PhoneAuth({ onClose }) {
             {loading ? "Sending..." : "Send OTP"}
           </button>
 
-          {/* 👇 Recaptcha Container (Firebase needs this) */}
+          {/*  Recaptcha Container (Firebase needs this) */}
           <div id="recaptcha-container"></div>
         </>
       ) : (

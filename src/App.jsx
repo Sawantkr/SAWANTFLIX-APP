@@ -85,7 +85,7 @@ export default function App() {
     )
   }
 
-  // Agar user login nahi hai => sirf AuthModal dikhao
+  
   if (!user) {
     return (
       <div className="flex items-center justify-center min-h-screen bg-black text-white">
@@ -94,7 +94,7 @@ export default function App() {
     )
   }
 
-  // Agar user login hai => pura app dikhao
+
   return (
     <div
       className={`min-h-screen transition-colors duration-300 ${

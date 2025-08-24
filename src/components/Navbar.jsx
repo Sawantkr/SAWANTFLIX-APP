@@ -145,7 +145,7 @@ export default function Navbar({
             />
           </button>
 
-          {/* ✅ Desktop search (Netflix-like red focus) */}
+          {/* Desktop search (Netflix-like red focus) */}
           <form
             onSubmit={handleSubmit}
             className="hidden md:flex items-center relative group"
@@ -175,7 +175,7 @@ export default function Navbar({
             />
           </form>
 
-          {/* Language (hide on very small screens) */}
+          {/* Language */}
           <select
             value={language}
             onChange={handleLanguageChange}
@@ -192,7 +192,7 @@ export default function Navbar({
             <option value="fr">Français</option>
           </select>
 
-          {/* 🌗 Theme toggle */}
+          {/* Theme toggle */}
           <button
             onClick={onToggleTheme}
             className="hidden sm:inline-flex items-center justify-center h-9 w-9 rounded bg-white/10 hover:bg-white/20"
@@ -273,7 +273,7 @@ export default function Navbar({
         </div>
       </div>
 
-      {/* ✅ Mobile search bar (Netflix-like red focus) */}
+      {/*  Mobile search bar  */}
       <div
         className={`md:hidden border-t border-white/10 transition-all duration-300 overflow-hidden ${
           mobileSearchOpen ? "max-h-24 opacity-100" : "max-h-0 opacity-0"
@@ -304,7 +304,7 @@ export default function Navbar({
         </div>
       </div>
 
-      {/* Mobile menu (animated slide-down) */}
+      {/* Mobile menu  */}
       <div
         className={`md:hidden border-t border-white/10 transition-all duration-300 overflow-hidden ${
           mobileMenuOpen ? "max-h-96 opacity-100" : "max-h-0 opacity-0"

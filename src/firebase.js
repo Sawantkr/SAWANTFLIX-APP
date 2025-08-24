@@ -29,7 +29,7 @@ export const googleProvider = new GoogleAuthProvider()
 export const setUpRecaptcha = (phoneNumber) => {
   const recaptchaVerifier = new RecaptchaVerifier(
     auth,
-    "recaptcha-container", // 👈 ye ek div id hoga jo UI mai banana hai
+    "recaptcha-container", 
     {
       size: "invisible",
       callback: (response) => {
