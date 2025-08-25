@@ -35,16 +35,16 @@ export default function AuthModal({ open, initialMode = "signin", onClose }) {
 
       if (mode === "signin") {
         await signInWithEmailAndPassword(auth, email, password)
-        onClose() // ✅ signin ke baad app khul jaaye
+        onClose() //  signin ke baad app khul jaaye
       } else if (mode === "signup") {
         const userCred = await createUserWithEmailAndPassword(auth, email, password)
         if (name) {
           await updateProfile(userCred.user, { displayName: name })
         }
 
-        // ✅ Account ban gaya, abhi signin nahi karna
+        //  Account ban gaya, abhi signin nahi karna
         await signOut(auth)  
-        alert("✅ Account created! Please Sign In.")
+        alert(" Account created! Please Sign In.")
 
         setMode("signin") // signin page dikha do
       }
@@ -90,7 +90,7 @@ export default function AuthModal({ open, initialMode = "signin", onClose }) {
       setLoading(true)
       setError("")
       await sendPasswordResetEmail(auth, email)
-      alert("📩 Reset link sent! Check your email.")
+      alert(" Reset link sent! Check your email.")
     } catch (e) {
       setError(e.message)
     } finally {

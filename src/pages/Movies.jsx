@@ -1,7 +1,6 @@
 import React from "react";
 import { useNavigate } from "react-router-dom";
 
-/* ✅ Dummy movies (later TMDB से replace कर देना) */
 const dummyMovies = [
   {
     id: "1",

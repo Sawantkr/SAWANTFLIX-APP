@@ -16,7 +16,7 @@ export default function PhoneAuth({ onClose }) {
         "recaptcha-container", 
         {
           size: "invisible", 
-          callback: () => console.log("Recaptcha resolved ✅"),
+          callback: () => console.log("Recaptcha resolved "),
         },
         auth
       )

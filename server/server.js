@@ -8,8 +8,8 @@ import { fileURLToPath } from "url";
 
 dotenv.config();
 
-console.log("🔑 RAZORPAY_KEY_ID:", process.env.RAZORPAY_KEY_ID);
-console.log("🔑 RAZORPAY_KEY_SECRET:", process.env.RAZORPAY_KEY_SECRET ? "Loaded ✅" : "Missing ❌");
+console.log(" RAZORPAY_KEY_ID:", process.env.RAZORPAY_KEY_ID);
+console.log(" RAZORPAY_KEY_SECRET:", process.env.RAZORPAY_KEY_SECRET ? "Loaded " : "Missing ");
 
 const app = express();
 
@@ -21,7 +21,7 @@ const key_id = process.env.RAZORPAY_KEY_ID;
 const key_secret = process.env.RAZORPAY_KEY_SECRET; 
 
 if (!key_id || !key_secret) {
-  console.warn("⚠️ Missing Razorpay keys in .env (Payment won't work).");
+  console.warn(" Missing Razorpay keys in .env (Payment won't work).");
 }
 
 const razorpay = new Razorpay({ key_id, key_secret });
@@ -38,7 +38,7 @@ app.post("/api/create-order", async (req, res) => {
       return res.status(400).json({ error: "Invalid amount" });
     }
 
-    console.log("📦 Creating order for amount:", amount);
+    console.log(" Creating order for amount:", amount);
 
     const order = await razorpay.orders.create({
       amount: Math.round(Number(amount) * 100),
@@ -46,7 +46,7 @@ app.post("/api/create-order", async (req, res) => {
       receipt: `rcpt_${Date.now()}`
     });
 
-    console.log("✅ Order created:", order.id);
+    console.log(" Order created:", order.id);
 
     return res.json({
       orderId: order.id,
@@ -55,7 +55,7 @@ app.post("/api/create-order", async (req, res) => {
       keyId: key_id, 
     });
   } catch (e) {
-    console.error("❌ Order create error:", e?.error || e);
+    console.error(" Order create error:", e?.error || e);
     return res.status(500).json({
       error: "Order creation failed",
       details: e?.error?.description || e?.message || "Unknown error",
@@ -84,7 +84,7 @@ app.post("/api/verify-payment", (req, res) => {
 
     return res.json({ verified });
   } catch (e) {
-    console.error("❌ Verify error:", e);
+    console.error(" Verify error:", e);
     return res.status(500).json({ verified: false, error: "Verification failed" });
   }
 });

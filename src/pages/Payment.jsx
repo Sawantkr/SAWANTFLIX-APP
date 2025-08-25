@@ -37,12 +37,12 @@ export default function Payment({ isLight }) {
 
       if (!res.ok) {
         const txt = await res.text();
-        alert("❌ Order API failed: " + txt);
+        alert(" Order API failed: " + txt);
         return;
       }
 
       const { orderId, amount: paise, currency, keyId } = await res.json();
-      if (!orderId) return alert("❌ Order create nahi hua");
+      if (!orderId) return alert(" Order create nahi hua");
 
       await ensureRazorpay();
 
@@ -58,7 +58,7 @@ export default function Payment({ isLight }) {
         theme: { color: "#E50914" },
 
         handler: (response) => {
-          alert("✅ Payment Successful! Payment ID: " + response.razorpay_payment_id);
+          alert(" Payment Successful! Payment ID: " + response.razorpay_payment_id);
           setCurrentPlan(planId);
 
           setBillingHistory((prev) => [
@@ -77,7 +77,7 @@ export default function Payment({ isLight }) {
       const rzp = new window.Razorpay(options);
 
       rzp.on("payment.failed", (resp) => {
-        alert("❌ Payment Failed:\n" + JSON.stringify(resp.error, null, 2));
+        alert(" Payment Failed:\n" + JSON.stringify(resp.error, null, 2));
         setBillingHistory((prev) => [
           {
             id: resp?.error?.metadata?.payment_id || `txn_${Date.now()}`,
@@ -93,7 +93,7 @@ export default function Payment({ isLight }) {
       rzp.open();
     } catch (error) {
       console.error("Payment init error:", error);
-      alert("❌ Payment Failed (Console check karo)");
+      alert(" Payment Failed (Console check karo)");
     }
   };
 
