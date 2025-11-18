@@ -4,21 +4,23 @@ import Razorpay from "razorpay";
 import crypto from "crypto";
 import dotenv from "dotenv";
 import path from "path";
+import axios from "axios";
 import { fileURLToPath } from "url";
 
 dotenv.config();
 
-console.log(" RAZORPAY_KEY_ID:", process.env.RAZORPAY_KEY_ID);
-console.log(" RAZORPAY_KEY_SECRET:", process.env.RAZORPAY_KEY_SECRET ? "Loaded " : "Missing ");
+// console.log(" RAZORPAY_KEY_ID:", process.env.RAZORPAY_KEY_ID);
+// console.log(" RAZORPAY_KEY_SECRET:", process.env.RAZORPAY_KEY_SECRET ? "Loaded " : "Missing ");
 
 const app = express();
 
 app.use(cors());
-app.use(express.json()); 
+app.use(express.json());
 
 
-const key_id = process.env.RAZORPAY_KEY_ID;        
-const key_secret = process.env.RAZORPAY_KEY_SECRET; 
+const key_id = process.env.RAZORPAY_KEY_ID;
+const key_secret = process.env.RAZORPAY_KEY_SECRET;
+const BACKEND_URL = process.env.Backend_URL;
 
 if (!key_id || !key_secret) {
   console.warn(" Missing Razorpay keys in .env (Payment won't work).");
@@ -33,7 +35,7 @@ app.get("/api", (_req, res) => res.json({ ok: true, msg: " Backend API working f
 
 app.post("/api/create-order", async (req, res) => {
   try {
-    const { amount } = req.body; 
+    const { amount } = req.body;
     if (!amount || isNaN(amount) || Number(amount) <= 0) {
       return res.status(400).json({ error: "Invalid amount" });
     }
@@ -52,7 +54,7 @@ app.post("/api/create-order", async (req, res) => {
       orderId: order.id,
       amount: order.amount,
       currency: order.currency,
-      keyId: key_id, 
+      keyId: key_id,
     });
   } catch (e) {
     console.error(" Order create error:", e?.error || e);
@@ -88,6 +90,28 @@ app.post("/api/verify-payment", (req, res) => {
     return res.status(500).json({ verified: false, error: "Verification failed" });
   }
 });
+
+// Health check endpoint
+app.get('/health', (req, res) => {
+  res.status(200).json({ status: 'OK', timestamp: new Date().toISOString() });
+});
+
+// Pinging the server endpoint
+app.get('/ping', (req, res) => {
+  res.status(200).send('Pong!');
+});
+
+// Function to ping the server every 10 minutes
+function pingServer() {
+  const url = `${BACKEND_URL}/ping` || `http://localhost:${process.env.PORT}/ping`;
+  axios.get(url)
+    .then(() => console.log('Pinged server at', new Date().toLocaleString()))
+    .catch(err => console.error('Error pinging server:', err.message));
+}
+
+// Ping every 10 minutes (600,000 milliseconds)
+setInterval(pingServer, 10000);
+
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
