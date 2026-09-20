@@ -1,15 +1,9 @@
 import admin from "firebase-admin";
 import fs from "fs";
-import path from "path";
-import { fileURLToPath } from "url";
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-
-const serviceAccountPath = path.join(
-  __dirname,
-  "my-project-33e6d-firebase-adminsdk-fbsvc-a87bcc2405.json"
-);
+const serviceAccountPath =
+  process.env.FIREBASE_SERVICE_ACCOUNT_PATH ||
+  "./my-project-33e6d-firebase-adminsdk-fbsvc-a87bcc2405.json";
 
 const serviceAccount = JSON.parse(
   fs.readFileSync(serviceAccountPath, "utf8")
