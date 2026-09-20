@@ -3,9 +3,8 @@ import cors from "cors";
 import Razorpay from "razorpay";
 import crypto from "crypto";
 import dotenv from "dotenv";
-import path from "path";
 import axios from "axios";
-import { fileURLToPath } from "url";
+
 import { db } from "./firebase.js";
 import pool from "./postgres.js";
 
@@ -208,7 +207,6 @@ app.post("/api/verify-payment", async (req, res) => {
       razorpay_order_id,
       razorpay_payment_id,
       razorpay_signature,
-
       firebaseUid,
       plan,
       amount,
@@ -327,7 +325,6 @@ app.post("/api/verify-payment", async (req, res) => {
       verified: true,
       savedToDatabase: Boolean(firebaseUid),
     });
-
   } catch (error) {
     console.error(
       "Verify payment error:",
@@ -459,7 +456,6 @@ app.get(
 
         latestPayment,
       });
-
     } catch (error) {
       console.error(
         "Customer support API error:",
@@ -529,7 +525,6 @@ app.get(
             : "expired",
         },
       });
-
     } catch (error) {
       console.error(
         "Subscription fetch error:",
@@ -591,34 +586,6 @@ function pingServer() {
 
 // Every 10 minutes
 setInterval(pingServer, 600000);
-
-// =====================================================
-// FRONTEND STATIC FILES
-// =====================================================
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-
-app.use(
-  express.static(
-    path.join(__dirname, "../frontend/dist")
-  )
-);
-
-app.get("*", (_req, res) => {
-  try {
-    res.sendFile(
-      path.join(
-        __dirname,
-        "../frontend/dist/index.html"
-      )
-    );
-  } catch {
-    res
-      .status(404)
-      .send("Frontend build not found");
-  }
-});
 
 // =====================================================
 // START SERVER
