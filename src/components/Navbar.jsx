@@ -26,14 +26,18 @@ export default function Navbar({
         setMobileMenuOpen(false);
       }
     };
+
     window.addEventListener("keydown", onKey);
+
     return () => window.removeEventListener("keydown", onKey);
   }, []);
 
   // common search submit
   const handleSubmit = (e) => {
     e.preventDefault();
+
     if (!query.trim()) return;
+
     onSearch?.(query);
     navigate("/");
     setMobileSearchOpen(false);
@@ -43,24 +47,30 @@ export default function Navbar({
   const handleLogoClick = () => navigate("/");
 
   const getUserAvatar = () => {
-    if (!user)
+    if (!user) {
       return "https://upload.wikimedia.org/wikipedia/commons/0/0b/Netflix-avatar.png";
+    }
+
     if (user.photoURL) return user.photoURL;
+
     if (user.email) {
       return `https://ui-avatars.com/api/?name=${encodeURIComponent(
         user.email[0].toUpperCase()
       )}&background=random&color=fff`;
     }
+
     if (user.phoneNumber) {
       return `https://ui-avatars.com/api/?name=${encodeURIComponent(
         user.phoneNumber
       )}&background=random&color=fff`;
     }
+
     return "https://upload.wikimedia.org/wikipedia/commons/0/0b/Netflix-avatar.png";
   };
 
   const handleLanguageChange = (e) => {
     const selectedLang = e.target.value;
+
     setLanguage(selectedLang);
     onLanguageChange?.(selectedLang);
   };
@@ -68,7 +78,11 @@ export default function Navbar({
   const toggleMobileMenu = () => {
     setMobileMenuOpen((s) => {
       const next = !s;
-      if (next) setMobileSearchOpen(false);
+
+      if (next) {
+        setMobileSearchOpen(false);
+      }
+
       return next;
     });
   };
@@ -76,7 +90,11 @@ export default function Navbar({
   const toggleMobileSearch = () => {
     setMobileSearchOpen((s) => {
       const next = !s;
-      if (next) setMobileMenuOpen(false);
+
+      if (next) {
+        setMobileMenuOpen(false);
+      }
+
       return next;
     });
   };
@@ -104,7 +122,9 @@ export default function Navbar({
             onClick={handleLogoClick}
           >
             <span className="text-[#e50914]">SAWANT</span>
-            <span className={isLight ? "text-black" : "text-white"}>FLIX</span>
+            <span className={isLight ? "text-black" : "text-white"}>
+              FLIX
+            </span>
           </h1>
 
           {/* Desktop menu */}
@@ -120,7 +140,9 @@ export default function Navbar({
                 <NavLink
                   to={item.to}
                   className={({ isActive }) =>
-                    isActive ? "text-red-500 font-bold" : "hover:text-red-500"
+                    isActive
+                      ? "text-red-500 font-bold"
+                      : "hover:text-red-500"
                   }
                 >
                   {item.label}
@@ -145,7 +167,7 @@ export default function Navbar({
             />
           </button>
 
-          {/* Desktop search (Netflix-like red focus) */}
+          {/* Desktop search */}
           <form
             onSubmit={handleSubmit}
             className="hidden md:flex items-center relative group"
@@ -155,6 +177,7 @@ export default function Navbar({
                 ${isLight ? "text-gray-600" : "text-gray-400"}
                 group-focus-within:text-[#e50914]`}
             />
+
             <input
               id="search"
               type="search"
@@ -211,6 +234,7 @@ export default function Navbar({
               >
                 Sign In
               </button>
+
               <button
                 className="hidden sm:inline-block px-4 py-1.5 rounded-md border border-gray-500 text-sm hover:bg-gray-700 hover:text-white transition"
                 onClick={() => onOpenAuth("signup")}
@@ -242,24 +266,33 @@ export default function Navbar({
                   <button className="w-full text-left px-4 py-2 text-sm hover:bg-white/10 transition">
                     👤 Profile
                   </button>
+
                   <button className="w-full text-left px-4 py-2 text-sm hover:bg-white/10 transition">
                     📺 Account
                   </button>
+
                   <button
                     className="w-full text-left px-4 py-2 text-sm hover:bg-white/10 transition"
                     onClick={() => navigate("/account/payment")}
                   >
                     💳 Payment
                   </button>
-                  <button className="w-full text-left px-4 py-2 text-sm hover:bg-white/10 transition">
+
+                  {/* Help Center → AI Customer Support */}
+                  <button
+                    className="w-full text-left px-4 py-2 text-sm hover:bg-white/10 transition"
+                    onClick={() => navigate("/support")}
+                  >
                     ❓ Help Center
                   </button>
+
                   <button
                     className="w-full text-left px-4 py-2 text-sm hover:bg-white/10 transition"
                     onClick={onToggleTheme}
                   >
                     {isLight ? "🌙 Dark Mode" : "☀️ Light Mode"}
                   </button>
+
                   <button
                     className="w-full text-left px-4 py-2 text-sm bg-red-600 hover:bg-red-700 transition"
                     onClick={onLogout}
@@ -273,15 +306,21 @@ export default function Navbar({
         </div>
       </div>
 
-      {/*  Mobile search bar  */}
+      {/* Mobile search bar */}
       <div
         className={`md:hidden border-t border-white/10 transition-all duration-300 overflow-hidden ${
-          mobileSearchOpen ? "max-h-24 opacity-100" : "max-h-0 opacity-0"
+          mobileSearchOpen
+            ? "max-h-24 opacity-100"
+            : "max-h-0 opacity-0"
         }`}
       >
         <div className="container py-2">
-          <form onSubmit={handleSubmit} className="relative flex items-center group">
+          <form
+            onSubmit={handleSubmit}
+            className="relative flex items-center group"
+          >
             <FiSearch className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 transition-colors group-focus-within:text-[#e50914]" />
+
             <input
               autoFocus={mobileSearchOpen}
               type="search"
@@ -304,10 +343,12 @@ export default function Navbar({
         </div>
       </div>
 
-      {/* Mobile menu  */}
+      {/* Mobile menu */}
       <div
         className={`md:hidden border-t border-white/10 transition-all duration-300 overflow-hidden ${
-          mobileMenuOpen ? "max-h-96 opacity-100" : "max-h-0 opacity-0"
+          mobileMenuOpen
+            ? "max-h-96 opacity-100"
+            : "max-h-0 opacity-0"
         }`}
       >
         <div className="container py-3">
@@ -325,7 +366,9 @@ export default function Navbar({
                   onClick={() => setMobileMenuOpen(false)}
                   className={({ isActive }) =>
                     `block px-2 py-2 rounded ${
-                      isActive ? "text-red-500 font-bold" : "hover:bg-white/10"
+                      isActive
+                        ? "text-red-500 font-bold"
+                        : "hover:bg-white/10"
                     }`
                   }
                 >
