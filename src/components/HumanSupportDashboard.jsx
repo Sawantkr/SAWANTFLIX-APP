@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { getAuth } from "firebase/auth";
 
-const API_URL = "https://sawantflix-app-1.onrender.com";
+const API_URL = "https://sawantflix-app.onrender.com";
 
 function HumanSupportDashboard() {
   const auth = getAuth();
