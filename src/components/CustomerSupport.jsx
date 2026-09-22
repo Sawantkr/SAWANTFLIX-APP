@@ -36,6 +36,12 @@ export default function CustomerSupport({ user }) {
   // ==================================================
 
   const [ticketId, setTicketId] = useState(null);
+
+  // Customer-facing ticket number (#1, #2, #3...)
+  // ticketId remains the real database ID for API operations.
+  const [customerTicketNumber, setCustomerTicketNumber] =
+    useState(null);
+
   const [ticketStatus, setTicketStatus] =
     useState(null);
 
@@ -155,6 +161,11 @@ export default function CustomerSupport({ user }) {
         data.ticket_id ||
         null;
 
+      const createdCustomerTicketNumber =
+        data.ticket?.customer_ticket_number ||
+        data.customer_ticket_number ||
+        null;
+
       const createdStatus =
         data.ticket?.status ||
         data.status ||
@@ -162,6 +173,10 @@ export default function CustomerSupport({ user }) {
 
       setTicketId(
         createdTicketId
+      );
+
+      setCustomerTicketNumber(
+        createdCustomerTicketNumber
       );
 
       setTicketStatus(
@@ -265,6 +280,7 @@ export default function CustomerSupport({ user }) {
           ) {
             if (!cancelled) {
               setTicketId(null);
+              setCustomerTicketNumber(null);
               setTicketStatus(null);
 
               setHumanReviewRequired(
@@ -538,9 +554,18 @@ export default function CustomerSupport({ user }) {
             ticketData.ticket?.id ||
             ticketData.ticket_id;
 
+          const createdCustomerTicketNumber =
+            ticketData.ticket?.customer_ticket_number ||
+            ticketData.customer_ticket_number ||
+            null;
+
           if (createdTicketId) {
             setTicketId(
               createdTicketId
+            );
+
+            setCustomerTicketNumber(
+              createdCustomerTicketNumber
             );
 
             setTicketStatus(
@@ -557,7 +582,7 @@ export default function CustomerSupport({ user }) {
                   role: "assistant",
 
                   content:
-                    `Your support ticket #${createdTicketId} has been created. A human support representative will review your request.`,
+                    `Your support ticket #${createdCustomerTicketNumber || 1} has been created. A human support representative will review your request.`,
                 },
               ]
             );
@@ -1171,7 +1196,7 @@ export default function CustomerSupport({ user }) {
                     </p>
 
                     <p className="text-lg font-semibold text-white">
-                      #{ticketId}
+                      #{customerTicketNumber || 1}
                     </p>
 
                     <p className="text-xs text-gray-500 mt-2">

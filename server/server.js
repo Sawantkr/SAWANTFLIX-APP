@@ -742,6 +742,27 @@ app.post(
       const ticket =
         ticketResult.rows[0];
 
+      // Customer-facing ticket number:
+      // each customer starts from #1, while the database id
+      // remains unchanged for internal/API operations.
+      const customerTicketNumberResult =
+        await pool.query(
+          `
+          SELECT COUNT(*)::int AS customer_ticket_number
+          FROM support_tickets
+          WHERE user_id = $1
+            AND id <= $2
+          `,
+          [userId, ticket.id]
+        );
+
+      const customerTicketNumber =
+        customerTicketNumberResult.rows[0]
+          ?.customer_ticket_number || 1;
+
+      ticket.customer_ticket_number =
+        customerTicketNumber;
+
       const messageResult =
         await pool.query(
           `
@@ -771,6 +792,9 @@ app.post(
       return res.status(201).json({
         ok: true,
         ticket,
+        ticket_id: ticket.id,
+        customer_ticket_number:
+          customerTicketNumber,
         message:
           messageResult.rows[0],
       });
@@ -883,7 +907,15 @@ app.get(
             st.priority,
             st.category,
             st.created_at,
-            st.updated_at
+            st.updated_at,
+
+            (
+              SELECT COUNT(*)::int
+              FROM support_tickets st2
+              WHERE st2.user_id = st.user_id
+                AND st2.id <= st.id
+            ) AS customer_ticket_number
+
           FROM support_tickets st
           JOIN users u
             ON st.user_id = u.id
