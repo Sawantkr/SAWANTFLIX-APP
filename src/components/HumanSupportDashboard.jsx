@@ -1,9 +1,7 @@
 import { useEffect, useState } from "react";
 import { getAuth } from "firebase/auth";
 
-const API_URL =
-  import.meta.env.VITE_SAWANTFLIX_API_URL ||
-  "http://localhost:5000";
+const API_URL = "https://sawantflix-app-1.onrender.com";
 
 function HumanSupportDashboard() {
   const auth = getAuth();
