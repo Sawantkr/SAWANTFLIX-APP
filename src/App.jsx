@@ -31,6 +31,13 @@ import MyList from "./pages/MyList"
 import Payment from "./pages/Payment"
 import MovieDetail from "./pages/MovieDetail"
 
+// Business / Legal Pages
+import About from "./pages/About"
+import ContactPage from "./pages/ContactPage"
+import PrivacyPolicy from "./pages/PrivacyPolicy"
+import TermsAndConditions from "./pages/TermsAndConditions"
+import RefundPolicy from "./pages/RefundPolicy"
+
 
 // =====================================================
 // SUPPORT ADMIN ACCOUNT
@@ -43,6 +50,7 @@ const SUPPORT_ADMIN_EMAIL =
 export default function App() {
 
   const location = useLocation()
+
 
   // =====================================================
   // STATES
@@ -107,6 +115,7 @@ export default function App() {
       return
     }
 
+
     const t = setTimeout(() => {
 
       searchMovie(query)
@@ -116,6 +125,7 @@ export default function App() {
         .catch(() => {})
 
     }, 400)
+
 
     return () => clearTimeout(t)
 
@@ -155,8 +165,10 @@ export default function App() {
         }
       )
 
+
       const data =
         await response.json()
+
 
       if (!response.ok) {
 
@@ -168,10 +180,12 @@ export default function App() {
         return
       }
 
+
       console.log(
         "✅ User synced with PostgreSQL:",
         data.user
       )
+
 
     } catch (error) {
 
@@ -201,6 +215,7 @@ export default function App() {
               firebaseUser
             )
 
+
             setUser({
               ...firebaseUser,
               isSubscribed: false,
@@ -212,10 +227,12 @@ export default function App() {
 
           }
 
+
           setLoading(false)
 
         }
       )
+
 
     return () => unsub()
 
@@ -302,6 +319,7 @@ export default function App() {
     const loggedInEmail =
       user.email?.toLowerCase().trim()
 
+
     const authorizedEmail =
       SUPPORT_ADMIN_EMAIL
         .toLowerCase()
@@ -320,10 +338,12 @@ export default function App() {
               Access Denied
             </h1>
 
+
             <p className="text-gray-400 mb-6">
               You are not authorized to access
               the support dashboard.
             </p>
+
 
             <button
               onClick={logout}
@@ -386,11 +406,13 @@ export default function App() {
       }`}
     >
 
+
       {/* =================================================
           CUSTOMER NAVBAR
           ================================================= */}
 
       <Navbar
+
         onOpenAuth={openAuth}
 
         onToggleTheme={() =>
@@ -404,6 +426,7 @@ export default function App() {
         user={user}
 
         onLogout={logout}
+
       />
 
 
@@ -413,7 +436,10 @@ export default function App() {
 
       <Routes>
 
-        {/* HOME */}
+
+        {/* =================================================
+            HOME
+            ================================================= */}
 
         <Route
           path="/"
@@ -425,6 +451,7 @@ export default function App() {
                 movies={trending}
                 interval={4000}
               />
+
 
               <div className="mt-8 space-y-8">
 
@@ -464,7 +491,9 @@ export default function App() {
         />
 
 
-        {/* TV SHOWS */}
+        {/* =================================================
+            TV SHOWS
+            ================================================= */}
 
         <Route
           path="/tv"
@@ -474,7 +503,9 @@ export default function App() {
         />
 
 
-        {/* MOVIES */}
+        {/* =================================================
+            MOVIES
+            ================================================= */}
 
         <Route
           path="/movies"
@@ -484,7 +515,9 @@ export default function App() {
         />
 
 
-        {/* NEW & POPULAR */}
+        {/* =================================================
+            NEW & POPULAR
+            ================================================= */}
 
         <Route
           path="/new"
@@ -494,7 +527,9 @@ export default function App() {
         />
 
 
-        {/* MY LIST */}
+        {/* =================================================
+            MY LIST
+            ================================================= */}
 
         <Route
           path="/my-list"
@@ -504,7 +539,9 @@ export default function App() {
         />
 
 
-        {/* MOVIE DETAIL */}
+        {/* =================================================
+            MOVIE DETAIL
+            ================================================= */}
 
         <Route
           path="/movies/:id"
@@ -514,7 +551,9 @@ export default function App() {
         />
 
 
-        {/* PAYMENT */}
+        {/* =================================================
+            PAYMENT
+            ================================================= */}
 
         <Route
           path="/account/payment"
@@ -524,7 +563,9 @@ export default function App() {
         />
 
 
-        {/* CUSTOMER SUPPORT */}
+        {/* =================================================
+            CUSTOMER SUPPORT
+            ================================================= */}
 
         <Route
           path="/support"
@@ -532,6 +573,61 @@ export default function App() {
             <CustomerSupport user={user} />
           }
         />
+
+
+        {/* =================================================
+            BUSINESS / LEGAL PAGES
+            ================================================= */}
+
+        {/* ABOUT US */}
+
+        <Route
+          path="/about"
+          element={
+            <About />
+          }
+        />
+
+
+        {/* CONTACT US */}
+
+        <Route
+          path="/contact"
+          element={
+            <ContactPage />
+          }
+        />
+
+
+        {/* PRIVACY POLICY */}
+
+        <Route
+          path="/privacy-policy"
+          element={
+            <PrivacyPolicy />
+          }
+        />
+
+
+        {/* TERMS & CONDITIONS */}
+
+        <Route
+          path="/terms-and-conditions"
+          element={
+            <TermsAndConditions />
+          }
+        />
+
+
+        {/* REFUND & CANCELLATION POLICY */}
+
+        <Route
+          path="/refund-policy"
+          element={
+            <RefundPolicy />
+          }
+        />
+
 
       </Routes>
 
@@ -548,13 +644,18 @@ export default function App() {
           ================================================= */}
 
       <MovieModal
+
         movie={selected}
+
         onClose={() =>
           setSelected(null)
         }
+
       />
+
 
     </div>
 
   )
+
 }
