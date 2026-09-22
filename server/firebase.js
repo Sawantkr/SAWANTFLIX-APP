@@ -1,5 +1,8 @@
 import admin from "firebase-admin";
 import fs from "fs";
+import dotenv from "dotenv";
+
+dotenv.config();
 
 const serviceAccountPath =
   process.env.FIREBASE_SERVICE_ACCOUNT_PATH ||
@@ -11,8 +14,12 @@ const serviceAccount = JSON.parse(
 
 admin.initializeApp({
   credential: admin.credential.cert(serviceAccount),
-  projectId: process.env.FIREBASE_PROJECT_ID,
 });
+
+console.log(
+  " Firebase Admin Project:",
+  serviceAccount.project_id
+);
 
 const db = admin.firestore();
 

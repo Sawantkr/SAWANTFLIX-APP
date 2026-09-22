@@ -2,6 +2,8 @@ import React, { useEffect, useState } from "react";
 import { NavLink, useNavigate } from "react-router-dom";
 import { FiSearch } from "react-icons/fi";
 
+const SUPPORT_ADMIN_EMAIL = "sawantkumarsawant7209@gmail.com";
+
 export default function Navbar({
   onOpenAuth,
   onToggleTheme,
@@ -16,14 +18,27 @@ export default function Navbar({
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [mobileSearchOpen, setMobileSearchOpen] = useState(false);
   const [language, setLanguage] = useState("en");
+
   const navigate = useNavigate();
 
-  // close search/menu with ESC
+  // =====================================================
+  // SUPPORT ADMIN CHECK
+  // =====================================================
+
+  const isSupportAdmin =
+    user?.email?.toLowerCase().trim() ===
+    SUPPORT_ADMIN_EMAIL.toLowerCase().trim();
+
+  // =====================================================
+  // CLOSE SEARCH / MENU WITH ESC
+  // =====================================================
+
   useEffect(() => {
     const onKey = (e) => {
       if (e.key === "Escape") {
         setMobileSearchOpen(false);
         setMobileMenuOpen(false);
+        setOpenDropdown(false);
       }
     };
 
@@ -32,19 +47,28 @@ export default function Navbar({
     return () => window.removeEventListener("keydown", onKey);
   }, []);
 
-  // common search submit
+  // =====================================================
+  // SEARCH
+  // =====================================================
+
   const handleSubmit = (e) => {
     e.preventDefault();
 
     if (!query.trim()) return;
 
     onSearch?.(query);
+
     navigate("/");
+
     setMobileSearchOpen(false);
     setMobileMenuOpen(false);
   };
 
   const handleLogoClick = () => navigate("/");
+
+  // =====================================================
+  // USER AVATAR
+  // =====================================================
 
   const getUserAvatar = () => {
     if (!user) {
@@ -68,12 +92,21 @@ export default function Navbar({
     return "https://upload.wikimedia.org/wikipedia/commons/0/0b/Netflix-avatar.png";
   };
 
+  // =====================================================
+  // LANGUAGE
+  // =====================================================
+
   const handleLanguageChange = (e) => {
     const selectedLang = e.target.value;
 
     setLanguage(selectedLang);
+
     onLanguageChange?.(selectedLang);
   };
+
+  // =====================================================
+  // MOBILE MENU
+  // =====================================================
 
   const toggleMobileMenu = () => {
     setMobileMenuOpen((s) => {
@@ -102,13 +135,21 @@ export default function Navbar({
   return (
     <div
       className={`w-full sticky top-0 z-40 backdrop-blur-md shadow-md ${
-        isLight ? "bg-white/95 text-black" : "bg-black/90 text-white"
+        isLight
+          ? "bg-white/95 text-black"
+          : "bg-black/90 text-white"
       }`}
     >
-      {/* top bar */}
+      {/* =================================================
+          TOP BAR
+          ================================================= */}
+
       <div className="container flex items-center justify-between gap-3 py-2 sm:py-3">
+
         {/* Left: Burger + Logo */}
+
         <div className="flex items-center gap-3">
+
           <button
             className="md:hidden h-9 w-9 grid place-items-center rounded bg-white/10 hover:bg-white/20 flex-shrink-0"
             aria-label="Toggle menu"
@@ -121,14 +162,27 @@ export default function Navbar({
             className="text-3xl sm:text-4xl font-extrabold tracking-wide cursor-pointer select-none whitespace-nowrap"
             onClick={handleLogoClick}
           >
-            <span className="text-[#e50914]">SAWANT</span>
-            <span className={isLight ? "text-black" : "text-white"}>
+            <span className="text-[#e50914]">
+              SAWANT
+            </span>
+
+            <span
+              className={
+                isLight
+                  ? "text-black"
+                  : "text-white"
+              }
+            >
               FLIX
             </span>
           </h1>
 
-          {/* Desktop menu */}
+          {/* =================================================
+              DESKTOP MENU
+              ================================================= */}
+
           <ul className="hidden md:flex items-center gap-6 text-sm font-medium ml-6">
+
             {[
               { to: "/", label: "Home" },
               { to: "/tv", label: "TV Shows" },
@@ -137,6 +191,7 @@ export default function Navbar({
               { to: "/my-list", label: "My List" },
             ].map((item) => (
               <li key={item.to}>
+
                 <NavLink
                   to={item.to}
                   className={({ isActive }) =>
@@ -147,14 +202,23 @@ export default function Navbar({
                 >
                   {item.label}
                 </NavLink>
+
               </li>
             ))}
+
           </ul>
+
         </div>
 
-        {/* Right: search + lang + theme + auth/profile */}
+
+        {/* =================================================
+            RIGHT SIDE
+            ================================================= */}
+
         <div className="flex items-center gap-2 sm:gap-4 flex-shrink-0">
-          {/* Mobile search icon */}
+
+          {/* Mobile Search */}
+
           <button
             className="md:hidden h-9 w-9 grid place-items-center rounded-full bg-white/10 hover:bg-white/20 flex-shrink-0 transition"
             aria-label="Search"
@@ -162,19 +226,28 @@ export default function Navbar({
           >
             <FiSearch
               className={`w-5 h-5 ${
-                isLight ? "text-gray-700" : "text-white"
+                isLight
+                  ? "text-gray-700"
+                  : "text-white"
               }`}
             />
           </button>
 
-          {/* Desktop search */}
+
+          {/* Desktop Search */}
+
           <form
             onSubmit={handleSubmit}
             className="hidden md:flex items-center relative group"
           >
+
             <FiSearch
               className={`absolute left-3 w-5 h-5 pointer-events-none transition-colors
-                ${isLight ? "text-gray-600" : "text-gray-400"}
+                ${
+                  isLight
+                    ? "text-gray-600"
+                    : "text-gray-400"
+                }
                 group-focus-within:text-[#e50914]`}
             />
 
@@ -182,7 +255,9 @@ export default function Navbar({
               id="search"
               type="search"
               value={query}
-              onChange={(e) => setQuery(e.target.value)}
+              onChange={(e) =>
+                setQuery(e.target.value)
+              }
               className={`pl-10 pr-3 py-1.5 rounded-md text-sm transition-all w-48 lg:w-64 min-w-0 outline-none
                 border focus:border-[#e50914] focus:ring-2 focus:ring-[#e50914]/70
                 focus:shadow-[0_0_0_3px_rgba(229,9,20,0.25)]
@@ -196,9 +271,12 @@ export default function Navbar({
               inputMode="search"
               enterKeyHint="search"
             />
+
           </form>
 
+
           {/* Language */}
+
           <select
             value={language}
             onChange={handleLanguageChange}
@@ -208,50 +286,89 @@ export default function Navbar({
                 : "bg-gray-800 text-white border-gray-600"
             }`}
           >
-            <option value="en">English</option>
-            <option value="hi">हिन्दी</option>
-            <option value="mr">मराठी</option>
-            <option value="es">Español</option>
-            <option value="fr">Français</option>
+            <option value="en">
+              English
+            </option>
+
+            <option value="hi">
+              हिन्दी
+            </option>
+
+            <option value="mr">
+              मराठी
+            </option>
+
+            <option value="es">
+              Español
+            </option>
+
+            <option value="fr">
+              Français
+            </option>
+
           </select>
 
-          {/* Theme toggle */}
+
+          {/* Theme */}
+
           <button
             onClick={onToggleTheme}
             className="hidden sm:inline-flex items-center justify-center h-9 w-9 rounded bg-white/10 hover:bg-white/20"
             aria-label="Toggle theme"
-            title={isLight ? "Enable Dark Mode" : "Enable Light Mode"}
+            title={
+              isLight
+                ? "Enable Dark Mode"
+                : "Enable Light Mode"
+            }
           >
             {isLight ? "🌙" : "☀️"}
           </button>
 
-          {/* Auth buttons / Profile */}
+
+          {/* =================================================
+              AUTH / PROFILE
+              ================================================= */}
+
           {!user ? (
+
             <div className="flex items-center gap-2">
+
               <button
                 className="px-3 sm:px-4 py-1.5 rounded-md bg-red-600 text-white font-semibold hover:bg-red-700 transition"
-                onClick={() => onOpenAuth("signin")}
+                onClick={() =>
+                  onOpenAuth("signin")
+                }
               >
                 Sign In
               </button>
 
               <button
                 className="hidden sm:inline-block px-4 py-1.5 rounded-md border border-gray-500 text-sm hover:bg-gray-700 hover:text-white transition"
-                onClick={() => onOpenAuth("signup")}
+                onClick={() =>
+                  onOpenAuth("signup")
+                }
               >
                 Sign Up
               </button>
+
             </div>
+
           ) : (
+
             <div className="relative">
+
               <img
                 src={getUserAvatar()}
                 alt="profile"
                 className="w-9 h-9 sm:w-10 sm:h-10 rounded-md cursor-pointer object-cover"
-                onClick={() => setOpenDropdown((o) => !o)}
+                onClick={() =>
+                  setOpenDropdown((o) => !o)
+                }
               />
 
+
               {openDropdown && (
+
                 <div
                   className={`absolute right-0 mt-2 w-56 rounded-lg shadow-lg border overflow-hidden ${
                     isLight
@@ -259,39 +376,91 @@ export default function Navbar({
                       : "bg-gray-900 text-white border-gray-700"
                   }`}
                 >
+
+                  {/* User */}
+
                   <div className="px-4 py-3 text-sm border-b border-gray-600 truncate">
-                    {user.displayName || user.email || user.phoneNumber}
+                    {user.displayName ||
+                      user.email ||
+                      user.phoneNumber}
                   </div>
 
-                  <button className="w-full text-left px-4 py-2 text-sm hover:bg-white/10 transition">
-                    👤 Profile
-                  </button>
 
-                  <button className="w-full text-left px-4 py-2 text-sm hover:bg-white/10 transition">
-                    📺 Account
-                  </button>
+                  {/* Profile */}
 
                   <button
                     className="w-full text-left px-4 py-2 text-sm hover:bg-white/10 transition"
-                    onClick={() => navigate("/account/payment")}
+                  >
+                    👤 Profile
+                  </button>
+
+
+                  {/* Account */}
+
+                  <button
+                    className="w-full text-left px-4 py-2 text-sm hover:bg-white/10 transition"
+                  >
+                    📺 Account
+                  </button>
+
+
+                  {/* Payment */}
+
+                  <button
+                    className="w-full text-left px-4 py-2 text-sm hover:bg-white/10 transition"
+                    onClick={() =>
+                      navigate("/account/payment")
+                    }
                   >
                     💳 Payment
                   </button>
 
-                  {/* Help Center → AI Customer Support */}
+
+                  {/* Help Center */}
+
                   <button
                     className="w-full text-left px-4 py-2 text-sm hover:bg-white/10 transition"
-                    onClick={() => navigate("/support")}
+                    onClick={() =>
+                      navigate("/support")
+                    }
                   >
                     ❓ Help Center
                   </button>
+
+
+                  {/* =================================================
+                      SUPPORT ADMIN
+                      ONLY FOR AUTHORIZED ACCOUNT
+                      ================================================= */}
+
+                  {isSupportAdmin && (
+
+                    <button
+                      className="w-full text-left px-4 py-2 text-sm text-red-400 hover:bg-red-500/10 transition border-t border-gray-700"
+                      onClick={() => {
+                        setOpenDropdown(false);
+                        navigate("/admin/support");
+                      }}
+                    >
+                      🛠️ Support Admin
+                    </button>
+
+                  )}
+
+
+                  {/* Theme */}
 
                   <button
                     className="w-full text-left px-4 py-2 text-sm hover:bg-white/10 transition"
                     onClick={onToggleTheme}
                   >
-                    {isLight ? "🌙 Dark Mode" : "☀️ Light Mode"}
+                    {isLight
+                      ? "🌙 Dark Mode"
+                      : "☀️ Light Mode"}
                   </button>
+
+
+                  {/* Logout */}
 
                   <button
                     className="w-full text-left px-4 py-2 text-sm bg-red-600 hover:bg-red-700 transition"
@@ -299,14 +468,24 @@ export default function Navbar({
                   >
                     🚪 Logout
                   </button>
+
                 </div>
+
               )}
+
             </div>
+
           )}
+
         </div>
+
       </div>
 
-      {/* Mobile search bar */}
+
+      {/* =================================================
+          MOBILE SEARCH
+          ================================================= */}
+
       <div
         className={`md:hidden border-t border-white/10 transition-all duration-300 overflow-hidden ${
           mobileSearchOpen
@@ -314,18 +493,23 @@ export default function Navbar({
             : "max-h-0 opacity-0"
         }`}
       >
+
         <div className="container py-2">
+
           <form
             onSubmit={handleSubmit}
             className="relative flex items-center group"
           >
+
             <FiSearch className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 transition-colors group-focus-within:text-[#e50914]" />
 
             <input
               autoFocus={mobileSearchOpen}
               type="search"
               value={query}
-              onChange={(e) => setQuery(e.target.value)}
+              onChange={(e) =>
+                setQuery(e.target.value)
+              }
               className={`flex-1 pl-10 pr-3 py-2 rounded-md text-sm transition-all outline-none
                 border focus:border-[#e50914] focus:ring-2 focus:ring-[#e50914]/70
                 focus:shadow-[0_0_0_3px_rgba(229,9,20,0.25)]
@@ -339,11 +523,18 @@ export default function Navbar({
               inputMode="search"
               enterKeyHint="search"
             />
+
           </form>
+
         </div>
+
       </div>
 
-      {/* Mobile menu */}
+
+      {/* =================================================
+          MOBILE MENU
+          ================================================= */}
+
       <div
         className={`md:hidden border-t border-white/10 transition-all duration-300 overflow-hidden ${
           mobileMenuOpen
@@ -351,8 +542,11 @@ export default function Navbar({
             : "max-h-0 opacity-0"
         }`}
       >
+
         <div className="container py-3">
+
           <ul className="flex flex-col gap-2 text-sm">
+
             {[
               { to: "/", label: "Home" },
               { to: "/tv", label: "TV Shows" },
@@ -360,10 +554,14 @@ export default function Navbar({
               { to: "/new", label: "New & Popular" },
               { to: "/my-list", label: "My List" },
             ].map((item) => (
+
               <li key={item.to}>
+
                 <NavLink
                   to={item.to}
-                  onClick={() => setMobileMenuOpen(false)}
+                  onClick={() =>
+                    setMobileMenuOpen(false)
+                  }
                   className={({ isActive }) =>
                     `block px-2 py-2 rounded ${
                       isActive
@@ -374,11 +572,37 @@ export default function Navbar({
                 >
                   {item.label}
                 </NavLink>
+
               </li>
+
             ))}
 
-            {/* Language in mobile menu */}
+
+            {/* Mobile Support Admin */}
+
+            {isSupportAdmin && (
+
+              <li>
+
+                <button
+                  onClick={() => {
+                    setMobileMenuOpen(false);
+                    navigate("/admin/support");
+                  }}
+                  className="w-full text-left px-2 py-2 rounded text-red-400 hover:bg-red-500/10"
+                >
+                  🛠️ Support Admin
+                </button>
+
+              </li>
+
+            )}
+
+
+            {/* Language */}
+
             <li className="pt-2">
+
               <select
                 value={language}
                 onChange={handleLanguageChange}
@@ -388,16 +612,37 @@ export default function Navbar({
                     : "bg-gray-800 text-white border-gray-600"
                 }`}
               >
-                <option value="en">English</option>
-                <option value="hi">हिन्दी</option>
-                <option value="mr">मराठी</option>
-                <option value="es">Español</option>
-                <option value="fr">Français</option>
+
+                <option value="en">
+                  English
+                </option>
+
+                <option value="hi">
+                  हिन्दी
+                </option>
+
+                <option value="mr">
+                  मराठी
+                </option>
+
+                <option value="es">
+                  Español
+                </option>
+
+                <option value="fr">
+                  Français
+                </option>
+
               </select>
+
             </li>
+
           </ul>
+
         </div>
+
       </div>
+
     </div>
   );
 }

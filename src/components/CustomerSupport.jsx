@@ -1,33 +1,404 @@
-import React, { useState } from "react"
-import { auth } from "../firebase"
+import React, { useEffect, useState } from "react";
+import { auth } from "../firebase";
 
 const SUPPORT_API_URL =
   import.meta.env.VITE_SUPPORT_API_URL ||
-  "http://127.0.0.1:8000"
+  "http://127.0.0.1:8000";
+
+const SAWANTFLIX_API_URL =
+  import.meta.env.VITE_SAWANTFLIX_API_URL ||
+  "http://localhost:5000";
+
+const SUPPORT_API_KEY =
+  import.meta.env.VITE_SUPPORT_API_KEY || "";
 
 export default function CustomerSupport({ user }) {
-  const [messages, setMessages] = useState([])
-  const [message, setMessage] = useState("")
-  const [loading, setLoading] = useState(false)
+  // ==================================================
+  // CHAT STATE
+  // ==================================================
 
-  // HITL state
-  const [humanReviewRequired, setHumanReviewRequired] =
-    useState(false)
-
-  const [interruptData, setInterruptData] =
-    useState(null)
-
-  const [humanResponse, setHumanResponse] =
-    useState("")
-
-  const [resuming, setResuming] = useState(false)
-
-  const [threadId] = useState(
-    () => `customer-${crypto.randomUUID()}`
-  )
+  const [messages, setMessages] = useState([]);
+  const [message, setMessage] = useState("");
+  const [loading, setLoading] = useState(false);
 
   // ==================================================
-  // SEND CUSTOMER MESSAGE
+  // HUMAN SUPPORT STATE
+  // ==================================================
+
+  const [humanReviewRequired, setHumanReviewRequired] =
+    useState(false);
+
+  const [interruptData, setInterruptData] =
+    useState(null);
+
+  // ==================================================
+  // REAL SUPPORT TICKET
+  // ==================================================
+
+  const [ticketId, setTicketId] = useState(null);
+  const [ticketStatus, setTicketStatus] =
+    useState(null);
+
+  const [ticketLoading, setTicketLoading] =
+    useState(false);
+
+  // ==================================================
+  // REFUND STATE
+  // ==================================================
+
+  const [refundLoading, setRefundLoading] =
+    useState(false);
+
+  const [refundMessage, setRefundMessage] =
+    useState("");
+
+  // ==================================================
+  // RESTORE STATE
+  // ==================================================
+
+  const [restoringTicket, setRestoringTicket] =
+    useState(true);
+
+  // ==================================================
+  // THREAD ID
+  // ==================================================
+
+  const [threadId] = useState(() => {
+    if (
+      typeof crypto !== "undefined" &&
+      crypto.randomUUID
+    ) {
+      return `customer-${crypto.randomUUID()}`;
+    }
+
+    return `customer-${Date.now()}-${Math.random()
+      .toString(36)
+      .substring(2)}`;
+  });
+
+  // ==================================================
+  // GET CURRENT FIREBASE USER
+  // ==================================================
+
+  const getCurrentUser = () => {
+    return auth.currentUser || user || null;
+  };
+
+  // ==================================================
+  // CREATE REAL SAWANTFLIX SUPPORT TICKET
+  // ==================================================
+
+  const createSupportTicket = async ({
+    customerMessage,
+    intent,
+    escalationReason,
+  }) => {
+    const currentUser = getCurrentUser();
+
+    if (!currentUser) {
+      throw new Error(
+        "Customer is not authenticated."
+      );
+    }
+
+    if (!SUPPORT_API_KEY) {
+      throw new Error(
+        "Support API key is missing."
+      );
+    }
+
+    setTicketLoading(true);
+
+    try {
+      const response = await fetch(
+        `${SAWANTFLIX_API_URL}/api/support/tickets`,
+        {
+          method: "POST",
+
+          headers: {
+            "Content-Type": "application/json",
+            "x-support-api-key":
+              SUPPORT_API_KEY,
+          },
+
+          body: JSON.stringify({
+            firebaseUid:
+              currentUser.uid,
+
+            subject:
+              intent === "billing"
+                ? "Billing and Payment Support"
+                : "Customer Support Request",
+
+            category:
+              intent || "general",
+
+            message:
+              customerMessage,
+          }),
+        }
+      );
+
+      const data =
+        await response.json();
+
+      if (!response.ok) {
+        throw new Error(
+          data.message ||
+            data.error ||
+            "Unable to create support ticket."
+        );
+      }
+
+      const createdTicketId =
+        data.ticket?.id ||
+        data.ticket_id ||
+        null;
+
+      const createdStatus =
+        data.ticket?.status ||
+        data.status ||
+        "open";
+
+      setTicketId(
+        createdTicketId
+      );
+
+      setTicketStatus(
+        createdStatus
+      );
+
+      return data;
+    } finally {
+      setTicketLoading(false);
+    }
+  };
+
+  // ==================================================
+  // RESTORE EXISTING SUPPORT TICKET
+  //
+  // IMPORTANT:
+  // This runs whenever customer opens /support.
+  //
+  // It checks PostgreSQL for an existing OPEN or
+  // IN_PROGRESS ticket and restores its messages.
+  // ==================================================
+
+  useEffect(() => {
+    let cancelled = false;
+
+    const restoreExistingTicket =
+      async () => {
+        const currentUser =
+          getCurrentUser();
+
+        if (!currentUser) {
+          if (!cancelled) {
+            setRestoringTicket(false);
+          }
+
+          return;
+        }
+
+        if (!SUPPORT_API_KEY) {
+          console.error(
+            "Support API key is missing."
+          );
+
+          if (!cancelled) {
+            setRestoringTicket(false);
+          }
+
+          return;
+        }
+
+        try {
+          setRestoringTicket(true);
+
+          // ------------------------------------------
+          // GET CUSTOMER TICKETS
+          // ------------------------------------------
+
+          const ticketsResponse =
+            await fetch(
+              `${SAWANTFLIX_API_URL}/api/support/tickets/${currentUser.uid}`,
+              {
+                method: "GET",
+
+                headers: {
+                  "x-support-api-key":
+                    SUPPORT_API_KEY,
+                },
+              }
+            );
+
+          if (
+            !ticketsResponse.ok
+          ) {
+            throw new Error(
+              "Unable to restore support tickets."
+            );
+          }
+
+          const ticketsData =
+            await ticketsResponse.json();
+
+          const customerTickets =
+            ticketsData.tickets || [];
+
+          // ------------------------------------------
+          // ONLY RESTORE ACTIVE TICKETS
+          // ------------------------------------------
+
+          const activeTickets =
+            customerTickets.filter(
+              (ticket) =>
+                ticket.status ===
+                  "open" ||
+                ticket.status ===
+                  "in_progress"
+            );
+
+          if (
+            activeTickets.length ===
+            0
+          ) {
+            if (!cancelled) {
+              setTicketId(null);
+              setTicketStatus(null);
+
+              setHumanReviewRequired(
+                false
+              );
+
+              setInterruptData(null);
+            }
+
+            return;
+          }
+
+          // ------------------------------------------
+          // LATEST ACTIVE TICKET
+          // ------------------------------------------
+
+          const latestTicket =
+            activeTickets[0];
+
+          if (cancelled) {
+            return;
+          }
+
+          const restoredTicketId =
+            latestTicket.id;
+
+          setTicketId(
+            restoredTicketId
+          );
+
+          setTicketStatus(
+            latestTicket.status
+          );
+
+          // ------------------------------------------
+          // THIS TICKET IS ALREADY WITH HUMAN SUPPORT
+          // ------------------------------------------
+
+          setHumanReviewRequired(
+            true
+          );
+
+          setInterruptData({
+            customer_message:
+              "Your existing support request is being reviewed.",
+
+            intent:
+              latestTicket.category ||
+              "general",
+
+            escalation_reason:
+              "human_review_required",
+          });
+
+          // ------------------------------------------
+          // GET TICKET MESSAGES
+          // ------------------------------------------
+
+          const messagesResponse =
+            await fetch(
+              `${SAWANTFLIX_API_URL}/api/support/tickets/${restoredTicketId}/messages`,
+              {
+                method: "GET",
+
+                headers: {
+                  "x-support-api-key":
+                    SUPPORT_API_KEY,
+                },
+              }
+            );
+
+          if (
+            !messagesResponse.ok
+          ) {
+            throw new Error(
+              "Unable to restore ticket messages."
+            );
+          }
+
+          const messagesData =
+            await messagesResponse.json();
+
+          const ticketMessages =
+            messagesData.messages || [];
+
+          // ------------------------------------------
+          // CONVERT DATABASE MESSAGES
+          // TO CUSTOMER CHAT FORMAT
+          // ------------------------------------------
+
+          const restoredMessages =
+            ticketMessages.map(
+              (item) => ({
+                role:
+                  item.sender_type ===
+                  "customer"
+                    ? "user"
+                    : "assistant",
+
+                content:
+                  item.message ||
+                  item.content ||
+                  "",
+              })
+            );
+
+          if (!cancelled) {
+            setMessages(
+              restoredMessages
+            );
+          }
+        } catch (error) {
+          console.error(
+            "Support ticket restore error:",
+            error
+          );
+        } finally {
+          if (!cancelled) {
+            setRestoringTicket(
+              false
+            );
+          }
+        }
+      };
+
+    restoreExistingTicket();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [user]);
+
+  // ==================================================
+  // SEND CUSTOMER MESSAGE TO AI
   // ==================================================
 
   const sendMessage = async () => {
@@ -36,59 +407,81 @@ export default function CustomerSupport({ user }) {
       loading ||
       humanReviewRequired
     ) {
-      return
+      return;
     }
 
-    if (!auth.currentUser) {
-      setMessages((prev) => [
+    const currentUser =
+      getCurrentUser();
+
+    if (!currentUser) {
+      setMessages(
+        (prev) => [
+          ...prev,
+
+          {
+            role: "assistant",
+
+            content:
+              "Please sign in to use customer support.",
+          },
+        ]
+      );
+
+      return;
+    }
+
+    const customerMessage =
+      message.trim();
+
+    setMessage("");
+
+    setMessages(
+      (prev) => [
         ...prev,
+
         {
-          role: "assistant",
+          role: "user",
           content:
-            "Please sign in to use customer support.",
+            customerMessage,
         },
-      ])
-
-      return
-    }
-
-    const customerMessage = message.trim()
-
-    setMessage("")
-
-    setMessages((prev) => [
-      ...prev,
-      {
-        role: "user",
-        content: customerMessage,
-      },
-    ])
+      ]
+    );
 
     try {
-      setLoading(true)
+      setLoading(true);
 
       const firebaseToken =
-        await auth.currentUser.getIdToken()
+        await currentUser.getIdToken();
 
-      const response = await fetch(
-        `${SUPPORT_API_URL}/support`,
-        {
-          method: "POST",
+      const response =
+        await fetch(
+          `${SUPPORT_API_URL}/support`,
+          {
+            method: "POST",
 
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${firebaseToken}`,
-          },
+            headers: {
+              "Content-Type":
+                "application/json",
 
-          body: JSON.stringify({
-            thread_id: threadId,
-            message: customerMessage,
-            firebase_uid: auth.currentUser.uid,
-          }),
-        }
-      )
+              Authorization:
+                `Bearer ${firebaseToken}`,
+            },
 
-      const data = await response.json()
+            body: JSON.stringify({
+              thread_id:
+                threadId,
+
+              message:
+                customerMessage,
+
+              firebase_uid:
+                currentUser.uid,
+            }),
+          }
+        );
+
+      const data =
+        await response.json();
 
       // ==================================================
       // HUMAN REVIEW REQUIRED
@@ -96,182 +489,510 @@ export default function CustomerSupport({ user }) {
 
       if (
         response.ok &&
-        data.status === "human_review_required"
+        data.status ===
+          "human_review_required"
       ) {
-        setHumanReviewRequired(true)
+        const escalationData =
+          data.interrupt_data || {};
+
+        setHumanReviewRequired(
+          true
+        );
 
         setInterruptData(
-          data.interrupt_data || null
-        )
+          escalationData
+        );
 
-        setMessages((prev) => [
-          ...prev,
-          {
-            role: "assistant",
-            content:
-              "Your request requires human support review. Please wait while a human support representative reviews your request.",
-          },
-        ])
+        setMessages(
+          (prev) => [
+            ...prev,
 
-        return
-      }
+            {
+              role: "assistant",
 
-      if (!response.ok) {
-        throw new Error(
-          data.detail ||
-            "Customer support request failed."
-        )
+              content:
+                "Your request requires human support review. We have escalated your request to our support team.",
+            },
+          ]
+        );
+
+        // ==================================================
+        // CREATE REAL SUPPORT TICKET
+        // ==================================================
+
+        try {
+          const ticketData =
+            await createSupportTicket({
+              customerMessage,
+
+              intent:
+                escalationData.intent ||
+                "general",
+
+              escalationReason:
+                escalationData.escalation_reason ||
+                "human_review_required",
+            });
+
+          const createdTicketId =
+            ticketData.ticket?.id ||
+            ticketData.ticket_id;
+
+          if (createdTicketId) {
+            setTicketId(
+              createdTicketId
+            );
+
+            setTicketStatus(
+              ticketData.ticket
+                ?.status ||
+                "open"
+            );
+
+            setMessages(
+              (prev) => [
+                ...prev,
+
+                {
+                  role: "assistant",
+
+                  content:
+                    `Your support ticket #${createdTicketId} has been created. A human support representative will review your request.`,
+                },
+              ]
+            );
+          }
+        } catch (ticketError) {
+          console.error(
+            "Support ticket creation error:",
+            ticketError
+          );
+
+          setMessages(
+            (prev) => [
+              ...prev,
+
+              {
+                role: "assistant",
+
+                content:
+                  "Your request was escalated, but we could not create the support ticket right now. Please try again shortly.",
+              },
+            ]
+          );
+        }
+
+        return;
       }
 
       // ==================================================
       // NORMAL AI RESPONSE
       // ==================================================
 
-      if (data.status === "completed") {
-        setMessages((prev) => [
-          ...prev,
-          {
-            role: "assistant",
-            content:
-              data.response ||
-              "I could not generate a response.",
-          },
-        ])
+      if (!response.ok) {
+        throw new Error(
+          data.detail ||
+            "Customer support request failed."
+        );
+      }
+
+      if (
+        data.status ===
+        "completed"
+      ) {
+        setMessages(
+          (prev) => [
+            ...prev,
+
+            {
+              role: "assistant",
+
+              content:
+                data.response ||
+                "I could not generate a response.",
+            },
+          ]
+        );
       }
     } catch (error) {
       console.error(
         "Customer support error:",
         error
-      )
+      );
 
-      setMessages((prev) => [
-        ...prev,
-        {
-          role: "assistant",
-          content:
-            "Sorry, I could not connect to customer support right now.",
-        },
-      ])
+      setMessages(
+        (prev) => [
+          ...prev,
+
+          {
+            role: "assistant",
+
+            content:
+              "Sorry, I could not connect to customer support right now.",
+          },
+        ]
+      );
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
 
   // ==================================================
-  // RESUME HITL WORKFLOW
+  // CUSTOMER REFUND REQUEST
   // ==================================================
 
-  const resumeHumanSupport = async () => {
-    if (
-      !humanResponse.trim() ||
-      resuming
-    ) {
-      return
-    }
-
-    if (!auth.currentUser) {
-      return
-    }
-
+  const requestRefund = async () => {
     try {
-      setResuming(true)
+      const currentUser =
+        getCurrentUser();
+
+      if (!currentUser) {
+        setRefundMessage(
+          "Please sign in first."
+        );
+
+        return;
+      }
+
+      if (!ticketId) {
+        setRefundMessage(
+          "Please create a support ticket before requesting a refund."
+        );
+
+        return;
+      }
+
+      setRefundLoading(true);
+      setRefundMessage("");
 
       const firebaseToken =
-        await auth.currentUser.getIdToken()
+        await currentUser.getIdToken();
 
-      const response = await fetch(
-        `${SUPPORT_API_URL}/support/resume`,
-        {
-          method: "POST",
+      const response =
+        await fetch(
+          `${SAWANTFLIX_API_URL}/api/support/customer/refund-request`,
+          {
+            method: "POST",
 
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${firebaseToken}`,
-          },
+            headers: {
+              "Content-Type":
+                "application/json",
 
-          body: JSON.stringify({
-            thread_id: threadId,
-            human_response:
-              humanResponse.trim(),
-          }),
-        }
-      )
+              Authorization:
+                `Bearer ${firebaseToken}`,
+            },
 
-      const data = await response.json()
+            body: JSON.stringify({
+              ticketId:
+                ticketId,
+
+              reason:
+                "Customer requested a refund",
+            }),
+          }
+        );
+
+      const data =
+        await response.json();
 
       if (!response.ok) {
         throw new Error(
-          data.detail ||
-            "Unable to resume support workflow."
-        )
+          data.error ||
+            data.message ||
+            "Unable to submit refund request."
+        );
       }
 
-      // ==================================================
-      // IF WORKFLOW IS STILL WAITING FOR HUMAN
-      // ==================================================
-
-      if (
-        data.status ===
-        "human_review_required"
-      ) {
-        setInterruptData(
-          data.interrupt_data || null
-        )
-
-        return
-      }
-
-      // ==================================================
-      // WORKFLOW COMPLETED
-      // ==================================================
-
-      if (data.status === "completed") {
-        setMessages((prev) => [
-          ...prev,
-          {
-            role: "assistant",
-            content:
-              data.response ||
-              "Your request has been processed by human support.",
-          },
-        ])
-
-        setHumanResponse("")
-        setInterruptData(null)
-        setHumanReviewRequired(false)
-      }
+      setRefundMessage(
+        "Refund request submitted successfully. Our support team will review it."
+      );
     } catch (error) {
       console.error(
-        "Human support resume error:",
+        "Refund request error:",
         error
-      )
+      );
 
-      setMessages((prev) => [
-        ...prev,
-        {
-          role: "assistant",
-          content:
-            "We could not resume the human support workflow right now.",
-        },
-      ])
+      setRefundMessage(
+        error.message ||
+          "Unable to submit refund request."
+      );
     } finally {
-      setResuming(false)
+      setRefundLoading(false);
     }
-  }
+  };
+
+  // ==================================================
+  // POLL HUMAN SUPPORT MESSAGES
+  //
+  // This keeps checking PostgreSQL every 5 seconds.
+  //
+  // IMPORTANT:
+  // We compare the complete database message list
+  // against current chat so messages don't duplicate.
+  // ==================================================
+
+  useEffect(() => {
+    if (
+      !ticketId ||
+      !auth.currentUser ||
+      !SUPPORT_API_KEY
+    ) {
+      return;
+    }
+
+    let cancelled = false;
+
+    const checkTicketMessages =
+      async () => {
+        try {
+          const response =
+            await fetch(
+              `${SAWANTFLIX_API_URL}/api/support/tickets/${ticketId}/messages`,
+              {
+                method: "GET",
+
+                headers: {
+                  "x-support-api-key":
+                    SUPPORT_API_KEY,
+                },
+              }
+            );
+
+          if (!response.ok) {
+            return;
+          }
+
+          const data =
+            await response.json();
+
+          const ticketMessages =
+            data.messages || [];
+
+          if (cancelled) {
+            return;
+          }
+
+          // ------------------------------------------
+          // UPDATE TICKET MESSAGES
+          // ------------------------------------------
+
+          const agentMessages =
+            ticketMessages.filter(
+              (item) =>
+                item.sender_type ===
+                "agent"
+            );
+
+          // ------------------------------------------
+          // ADD ONLY AGENT MESSAGES THAT ARE
+          // NOT ALREADY PRESENT
+          // ------------------------------------------
+
+          setMessages(
+            (previousMessages) => {
+              const existingAgentTexts =
+                previousMessages
+                  .filter(
+                    (item) =>
+                      item.role ===
+                      "assistant"
+                  )
+                  .map(
+                    (item) =>
+                      item.content
+                  );
+
+              const newAgentMessages =
+                agentMessages.filter(
+                  (item) => {
+                    const text =
+                      item.message ||
+                      item.content ||
+                      "";
+
+                    return !existingAgentTexts.includes(
+                      text
+                    );
+                  }
+                );
+
+              if (
+                newAgentMessages.length ===
+                0
+              ) {
+                return previousMessages;
+              }
+
+              const formattedMessages =
+                newAgentMessages.map(
+                  (item) => ({
+                    role:
+                      "assistant",
+
+                    content:
+                      item.message ||
+                      item.content ||
+                      "Human support replied.",
+                  })
+                );
+
+              return [
+                ...previousMessages,
+                ...formattedMessages,
+              ];
+            }
+          );
+        } catch (error) {
+          console.error(
+            "Support ticket polling error:",
+            error
+          );
+        }
+      };
+
+    // Initial check
+    checkTicketMessages();
+
+    // Check every 5 seconds
+    const interval =
+      setInterval(
+        checkTicketMessages,
+        5000
+      );
+
+    return () => {
+      cancelled = true;
+
+      clearInterval(
+        interval
+      );
+    };
+  }, [ticketId]);
+
+  // ==================================================
+  // KEEP TICKET STATUS UPDATED
+  //
+  // Messages endpoint does not currently return
+  // ticket status, so we fetch customer's tickets
+  // periodically.
+  // ==================================================
+
+  useEffect(() => {
+    if (
+      !ticketId ||
+      !auth.currentUser ||
+      !SUPPORT_API_KEY
+    ) {
+      return;
+    }
+
+    let cancelled = false;
+
+    const checkTicketStatus =
+      async () => {
+        try {
+          const currentUser =
+            auth.currentUser;
+
+          if (!currentUser) {
+            return;
+          }
+
+          const response =
+            await fetch(
+              `${SAWANTFLIX_API_URL}/api/support/tickets/${currentUser.uid}`,
+              {
+                method: "GET",
+
+                headers: {
+                  "x-support-api-key":
+                    SUPPORT_API_KEY,
+                },
+              }
+            );
+
+          if (!response.ok) {
+            return;
+          }
+
+          const data =
+            await response.json();
+
+          const tickets =
+            data.tickets || [];
+
+          const currentTicket =
+            tickets.find(
+              (ticket) =>
+                String(ticket.id) ===
+                String(ticketId)
+            );
+
+          if (
+            currentTicket &&
+            !cancelled
+          ) {
+            setTicketStatus(
+              currentTicket.status
+            );
+
+            // ------------------------------------------
+            // IF HUMAN SUPPORT RESOLVED THE TICKET
+            // ------------------------------------------
+
+            if (
+              currentTicket.status ===
+              "resolved"
+            ) {
+              setHumanReviewRequired(
+                false
+              );
+            }
+          }
+        } catch (error) {
+          console.error(
+            "Ticket status polling error:",
+            error
+          );
+        }
+      };
+
+    checkTicketStatus();
+
+    const interval =
+      setInterval(
+        checkTicketStatus,
+        5000
+      );
+
+    return () => {
+      cancelled = true;
+
+      clearInterval(
+        interval
+      );
+    };
+  }, [ticketId]);
 
   // ==================================================
   // ENTER KEY
   // ==================================================
 
-  const handleKeyDown = (event) => {
-    if (
-      event.key === "Enter" &&
-      !event.shiftKey
-    ) {
-      event.preventDefault()
-      sendMessage()
-    }
-  }
+  const handleKeyDown =
+    (event) => {
+      if (
+        event.key === "Enter" &&
+        !event.shiftKey
+      ) {
+        event.preventDefault();
+
+        sendMessage();
+      }
+    };
+
+  // ==================================================
+  // UI
+  // ==================================================
 
   return (
     <div className="min-h-screen bg-black text-white pt-24 px-4">
@@ -301,7 +1022,8 @@ export default function CustomerSupport({ user }) {
           </h1>
 
           <p className="text-gray-400 mt-3">
-            AI-powered customer support for your Sawantflix account
+            AI-powered customer support for
+            your Sawantflix account
           </p>
 
         </div>
@@ -332,32 +1054,48 @@ export default function CustomerSupport({ user }) {
 
           <div className="flex-1 p-6 space-y-4 overflow-y-auto">
 
-            {messages.length === 0 && (
+            {/* ==================================================
+                RESTORING TICKET
+            ================================================== */}
 
-              <div className="text-center text-gray-500 py-20">
-
-                <div className="text-5xl mb-4">
-                  🎧
-                </div>
-
-                <h2 className="text-xl text-white font-semibold">
-                  How can we help you?
-                </h2>
-
-                <p className="mt-2">
-                  Ask about your subscription,
-                  payments, account, or technical issues.
-                </p>
-
+            {restoringTicket && (
+              <div className="text-center text-gray-500 py-4">
+                Restoring your support conversation...
               </div>
-
             )}
+
+            {/* ==================================================
+                EMPTY STATE
+            ================================================== */}
+
+            {!restoringTicket &&
+              messages.length === 0 && (
+                <div className="text-center text-gray-500 py-20">
+
+                  <div className="text-5xl mb-4">
+                    🎧
+                  </div>
+
+                  <h2 className="text-xl text-white font-semibold">
+                    How can we help you?
+                  </h2>
+
+                  <p className="mt-2">
+                    Ask about your subscription,
+                    payments, account, or technical issues.
+                  </p>
+
+                </div>
+              )}
+
+            {/* ==================================================
+                MESSAGES
+            ================================================== */}
 
             {messages.map(
               (item, index) => (
-
                 <div
-                  key={index}
+                  key={`${index}-${item.content}`}
                   className={
                     item.role === "user"
                       ? "flex justify-end"
@@ -372,13 +1110,10 @@ export default function CustomerSupport({ user }) {
                         : "max-w-[75%] bg-[#303030] rounded-2xl px-4 py-3"
                     }
                   >
-
                     {item.content}
-
                   </div>
 
                 </div>
-
               )
             )}
 
@@ -387,25 +1122,20 @@ export default function CustomerSupport({ user }) {
             ================================================== */}
 
             {loading && (
-
               <div className="flex justify-start">
 
                 <div className="bg-[#303030] rounded-2xl px-4 py-3 text-gray-400">
-
                   AI is checking your request...
-
                 </div>
 
               </div>
-
             )}
 
             {/* ==================================================
-                HUMAN REVIEW PANEL
+                HUMAN SUPPORT STATUS
             ================================================== */}
 
             {humanReviewRequired && (
-
               <div className="mt-6 border border-orange-500/50 bg-orange-500/10 rounded-xl p-5">
 
                 <div className="flex items-center gap-3 mb-4">
@@ -421,18 +1151,47 @@ export default function CustomerSupport({ user }) {
                     </h3>
 
                     <p className="text-sm text-gray-400">
-                      Your request has been escalated for human review.
+                      Your request has been
+                      escalated to our support team.
                     </p>
 
                   </div>
 
                 </div>
 
-                {/* HITL Details */}
+                {/* ==================================================
+                    TICKET INFORMATION
+                ================================================== */}
+
+                {ticketId && (
+                  <div className="bg-black/30 rounded-lg p-4 mb-4">
+
+                    <p className="text-xs text-gray-500">
+                      Support Ticket
+                    </p>
+
+                    <p className="text-lg font-semibold text-white">
+                      #{ticketId}
+                    </p>
+
+                    <p className="text-xs text-gray-500 mt-2">
+                      Status
+                    </p>
+
+                    <p className="text-sm text-orange-400 capitalize">
+                      {ticketStatus ||
+                        "Open"}
+                    </p>
+
+                  </div>
+                )}
+
+                {/* ==================================================
+                    ESCALATION DETAILS
+                ================================================== */}
 
                 {interruptData && (
-
-                  <div className="bg-black/30 rounded-lg p-4 mb-4 space-y-2">
+                  <div className="bg-black/30 rounded-lg p-4 space-y-2">
 
                     <div>
 
@@ -473,64 +1232,33 @@ export default function CustomerSupport({ user }) {
 
                     </div>
 
-                    {interruptData.diagnostic_result && (
-
-                      <div>
-
-                        <p className="text-xs text-gray-500">
-                          Diagnostic Result
-                        </p>
-
-                        <p className="text-sm text-gray-200">
-                          {interruptData.diagnostic_result}
-                        </p>
-
-                      </div>
-
-                    )}
-
                   </div>
-
                 )}
 
-                {/* Human Response */}
+                {/* ==================================================
+                    WAITING MESSAGE
+                ================================================== */}
 
-                <label className="block text-sm font-medium text-gray-300 mb-2">
-                  Human Support Response
-                </label>
+                <div className="mt-4 text-center">
 
-                <textarea
-                  value={humanResponse}
-                  onChange={(event) =>
-                    setHumanResponse(
-                      event.target.value
-                    )
-                  }
-                  placeholder="Enter the response from human support..."
-                  rows={4}
-                  disabled={resuming}
-                  className="w-full resize-none bg-[#181818] border border-gray-700 rounded-lg px-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-orange-500"
-                />
+                  <p className="text-sm text-orange-400">
+                    🟠 Human support is reviewing your request.
+                  </p>
 
-                <button
-                  onClick={resumeHumanSupport}
-                  disabled={
-                    resuming ||
-                    !humanResponse.trim()
-                  }
-                  className="mt-3 w-full px-6 py-3 bg-orange-600 hover:bg-orange-700 rounded-lg font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  {resuming
-                    ? "Resuming..."
-                    : "Resume Workflow"}
-                </button>
+                  <p className="text-xs text-gray-500 mt-1">
+                    You will see the support representative's
+                    reply here automatically.
+                  </p>
 
-                <p className="text-xs text-gray-500 mt-3 text-center">
-                  The customer conversation will continue after human support responds.
-                </p>
+                </div>
+
+                {ticketLoading && (
+                  <p className="text-xs text-gray-500 text-center mt-3">
+                    Creating your support ticket...
+                  </p>
+                )}
 
               </div>
-
             )}
 
           </div>
@@ -541,20 +1269,51 @@ export default function CustomerSupport({ user }) {
 
           <div className="border-t border-gray-800 p-4">
 
-            {humanReviewRequired && (
+            {/* ==================================================
+                REFUND BUTTON
+            ================================================== */}
 
+            <div className="mb-4 flex justify-end">
+
+              <button
+                onClick={requestRefund}
+                disabled={
+                  refundLoading ||
+                  !ticketId
+                }
+                className="px-5 py-2 bg-yellow-600 hover:bg-yellow-700 rounded-lg font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {refundLoading
+                  ? "Submitting..."
+                  : "💰 Request Refund"}
+              </button>
+
+            </div>
+
+            {refundMessage && (
+              <p className="text-sm text-center text-gray-300 mb-3">
+                {refundMessage}
+              </p>
+            )}
+
+            {/* ==================================================
+                HUMAN SUPPORT MESSAGE
+            ================================================== */}
+
+            {humanReviewRequired && (
               <div className="mb-3 text-center">
 
                 <p className="text-sm text-orange-400">
-                  🟠 Human support is currently reviewing your request.
+                  🟠 Human support is currently
+                  reviewing your request.
                 </p>
 
                 <p className="text-xs text-gray-500 mt-1">
-                  Please wait for the human support response before sending another message.
+                  Please wait for the support
+                  representative's response.
                 </p>
 
               </div>
-
             )}
 
             <div className="flex gap-3">
@@ -562,7 +1321,9 @@ export default function CustomerSupport({ user }) {
               <textarea
                 value={message}
                 onChange={(event) =>
-                  setMessage(event.target.value)
+                  setMessage(
+                    event.target.value
+                  )
                 }
                 onKeyDown={handleKeyDown}
                 disabled={
@@ -607,5 +1368,5 @@ export default function CustomerSupport({ user }) {
       </div>
 
     </div>
-  )
+  );
 }

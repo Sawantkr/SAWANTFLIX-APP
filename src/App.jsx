@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react"
-import { Routes, Route } from "react-router-dom"
+import { Routes, Route, useLocation } from "react-router-dom"
+
 import Navbar from "./components/Navbar"
 import Banner from "./components/Banner"
 import Row from "./components/Row"
@@ -7,6 +8,7 @@ import MovieModal from "./components/MovieModal"
 import AuthModal from "./components/AuthModal"
 import Footer from "./components/Footer"
 import CustomerSupport from "./components/CustomerSupport"
+import HumanSupportDashboard from "./components/HumanSupportDashboard"
 
 import {
   fetchTrending,
@@ -16,7 +18,10 @@ import {
 } from "./api/tmdb"
 
 import { auth } from "./firebase"
-import { onAuthStateChanged, signOut } from "firebase/auth"
+import {
+  onAuthStateChanged,
+  signOut,
+} from "firebase/auth"
 
 // Pages
 import TVShows from "./pages/TVShows"
@@ -27,7 +32,21 @@ import Payment from "./pages/Payment"
 import MovieDetail from "./pages/MovieDetail"
 
 
+// =====================================================
+// SUPPORT ADMIN ACCOUNT
+// =====================================================
+
+const SUPPORT_ADMIN_EMAIL =
+  "sawantkumarsawant7209@gmail.com"
+
+
 export default function App() {
+
+  const location = useLocation()
+
+  // =====================================================
+  // STATES
+  // =====================================================
 
   const [trending, setTrending] = useState([])
   const [topRated, setTopRated] = useState([])
@@ -44,6 +63,14 @@ export default function App() {
 
   const [user, setUser] = useState(null)
   const [loading, setLoading] = useState(true)
+
+
+  // =====================================================
+  // CHECK ADMIN ROUTE
+  // =====================================================
+
+  const isAdminRoute =
+    location.pathname === "/admin/support"
 
 
   // =====================================================
@@ -83,7 +110,9 @@ export default function App() {
     const t = setTimeout(() => {
 
       searchMovie(query)
-        .then((r) => setSearchResults(r.data.results))
+        .then((r) =>
+          setSearchResults(r.data.results)
+        )
         .catch(() => {})
 
     }, 400)
@@ -97,7 +126,9 @@ export default function App() {
   // FIREBASE USER -> POSTGRESQL SYNC
   // =====================================================
 
-  const syncUserWithBackend = async (firebaseUser) => {
+  const syncUserWithBackend = async (
+    firebaseUser
+  ) => {
 
     try {
 
@@ -107,18 +138,25 @@ export default function App() {
           method: "POST",
 
           headers: {
-            "Content-Type": "application/json",
+            "Content-Type":
+              "application/json",
           },
 
           body: JSON.stringify({
-            firebaseUid: firebaseUser.uid,
-            email: firebaseUser.email,
-            name: firebaseUser.displayName,
+            firebaseUid:
+              firebaseUser.uid,
+
+            email:
+              firebaseUser.email,
+
+            name:
+              firebaseUser.displayName,
           }),
         }
       )
 
-      const data = await response.json()
+      const data =
+        await response.json()
 
       if (!response.ok) {
 
@@ -152,30 +190,32 @@ export default function App() {
 
   useEffect(() => {
 
-    const unsub = onAuthStateChanged(
-      auth,
-      async (firebaseUser) => {
+    const unsub =
+      onAuthStateChanged(
+        auth,
+        async (firebaseUser) => {
 
-        if (firebaseUser) {
+          if (firebaseUser) {
 
-          // Sync Firebase user with PostgreSQL
-          await syncUserWithBackend(firebaseUser)
+            await syncUserWithBackend(
+              firebaseUser
+            )
 
-          setUser({
-            ...firebaseUser,
-            isSubscribed: false,
-          })
+            setUser({
+              ...firebaseUser,
+              isSubscribed: false,
+            })
 
-        } else {
+          } else {
 
-          setUser(null)
+            setUser(null)
+
+          }
+
+          setLoading(false)
 
         }
-
-        setLoading(false)
-
-      }
-    )
+      )
 
     return () => unsub()
 
@@ -186,7 +226,9 @@ export default function App() {
   // HANDLERS
   // =====================================================
 
-  const openAuth = (mode = "signin") => {
+  const openAuth = (
+    mode = "signin"
+  ) => {
 
     setAuthMode(mode)
 
@@ -231,7 +273,84 @@ export default function App() {
 
 
   // =====================================================
-  // AUTH SCREEN
+  // ADMIN SUPPORT PORTAL
+  // =====================================================
+
+  if (isAdminRoute) {
+
+    // User is not logged in
+    if (!user) {
+
+      return (
+
+        <div className="flex items-center justify-center min-h-screen bg-black text-white">
+
+          <AuthModal
+            open={true}
+            mode="signin"
+            onClose={() => {}}
+          />
+
+        </div>
+
+      )
+
+    }
+
+
+    // Check authorized support email
+    const loggedInEmail =
+      user.email?.toLowerCase().trim()
+
+    const authorizedEmail =
+      SUPPORT_ADMIN_EMAIL
+        .toLowerCase()
+        .trim()
+
+
+    if (loggedInEmail !== authorizedEmail) {
+
+      return (
+
+        <div className="flex items-center justify-center min-h-screen bg-black text-white">
+
+          <div className="text-center">
+
+            <h1 className="text-3xl font-bold mb-4">
+              Access Denied
+            </h1>
+
+            <p className="text-gray-400 mb-6">
+              You are not authorized to access
+              the support dashboard.
+            </p>
+
+            <button
+              onClick={logout}
+              className="px-5 py-2 bg-red-600 rounded-lg hover:bg-red-700"
+            >
+              Logout
+            </button>
+
+          </div>
+
+        </div>
+
+      )
+
+    }
+
+
+    // Authorized support user
+    return (
+      <HumanSupportDashboard />
+    )
+
+  }
+
+
+  // =====================================================
+  // NORMAL CUSTOMER AUTH
   // =====================================================
 
   if (!user) {
@@ -254,7 +373,7 @@ export default function App() {
 
 
   // =====================================================
-  // MAIN APP
+  // NORMAL CUSTOMER APP
   // =====================================================
 
   return (
@@ -268,31 +387,33 @@ export default function App() {
     >
 
       {/* =================================================
-          NAVBAR
+          CUSTOMER NAVBAR
           ================================================= */}
 
       <Navbar
         onOpenAuth={openAuth}
+
         onToggleTheme={() =>
           setIsLight((s) => !s)
         }
+
         isLight={isLight}
+
         onSearch={setQuery}
+
         user={user}
+
         onLogout={logout}
       />
 
 
       {/* =================================================
-          ROUTES
+          CUSTOMER ROUTES
           ================================================= */}
 
       <Routes>
 
-
-        {/* =================================================
-            HOME
-            ================================================= */}
+        {/* HOME */}
 
         <Route
           path="/"
@@ -305,11 +426,7 @@ export default function App() {
                 interval={4000}
               />
 
-
               <div className="mt-8 space-y-8">
-
-
-                {/* Trending */}
 
                 <Row
                   title="Trending Now"
@@ -317,26 +434,17 @@ export default function App() {
                   onOpen={openMovie}
                 />
 
-
-                {/* Top Rated */}
-
                 <Row
                   title="Top Rated"
                   movies={topRated}
                   onOpen={openMovie}
                 />
 
-
-                {/* Upcoming */}
-
                 <Row
                   title="Upcoming"
                   movies={upcoming}
                   onOpen={openMovie}
                 />
-
-
-                {/* Search Results */}
 
                 {searchResults.length > 0 && (
 
@@ -356,19 +464,17 @@ export default function App() {
         />
 
 
-        {/* =================================================
-            TV SHOWS
-            ================================================= */}
+        {/* TV SHOWS */}
 
         <Route
           path="/tv"
-          element={<TVShows />}
+          element={
+            <TVShows />
+          }
         />
 
 
-        {/* =================================================
-            MOVIES
-            ================================================= */}
+        {/* MOVIES */}
 
         <Route
           path="/movies"
@@ -378,49 +484,47 @@ export default function App() {
         />
 
 
-        {/* =================================================
-            NEW & POPULAR
-            ================================================= */}
+        {/* NEW & POPULAR */}
 
         <Route
           path="/new"
-          element={<NewPopular />}
+          element={
+            <NewPopular />
+          }
         />
 
 
-        {/* =================================================
-            MY LIST
-            ================================================= */}
+        {/* MY LIST */}
 
         <Route
           path="/my-list"
-          element={<MyList />}
+          element={
+            <MyList />
+          }
         />
 
 
-        {/* =================================================
-            MOVIE DETAIL
-            ================================================= */}
+        {/* MOVIE DETAIL */}
 
         <Route
           path="/movies/:id"
-          element={<MovieDetail />}
+          element={
+            <MovieDetail />
+          }
         />
 
 
-        {/* =================================================
-            PAYMENT
-            ================================================= */}
+        {/* PAYMENT */}
 
         <Route
           path="/account/payment"
-          element={<Payment />}
+          element={
+            <Payment />
+          }
         />
 
 
-        {/* =================================================
-            CUSTOMER SUPPORT
-            ================================================= */}
+        {/* CUSTOMER SUPPORT */}
 
         <Route
           path="/support"
@@ -433,7 +537,7 @@ export default function App() {
 
 
       {/* =================================================
-          FOOTER
+          CUSTOMER FOOTER
           ================================================= */}
 
       <Footer />
@@ -445,7 +549,9 @@ export default function App() {
 
       <MovieModal
         movie={selected}
-        onClose={() => setSelected(null)}
+        onClose={() =>
+          setSelected(null)
+        }
       />
 
     </div>
