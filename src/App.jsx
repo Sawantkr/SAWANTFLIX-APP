@@ -143,7 +143,7 @@ export default function App() {
     try {
 
       const response = await fetch(
-        "http://localhost:5000/api/users/sync",
+  `${import.meta.env.VITE_SAWANTFLIX_API_URL}/api/users/sync`,
         {
           method: "POST",
 
