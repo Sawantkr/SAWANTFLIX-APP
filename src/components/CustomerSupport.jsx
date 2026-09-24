@@ -264,15 +264,12 @@ export default function CustomerSupport({ user }) {
           // ------------------------------------------
           // ONLY RESTORE ACTIVE TICKETS
           // ------------------------------------------
-
-          const activeTickets =
-            customerTickets.filter(
-              (ticket) =>
-                ticket.status ===
-                  "open" ||
-                ticket.status ===
-                  "in_progress"
-            );
+const activeTickets =
+  customerTickets.filter(
+    (ticket) =>
+      ticket.status === "open" ||
+      ticket.status === "in_progress"
+  );
 
           if (
             activeTickets.length ===
@@ -297,8 +294,8 @@ export default function CustomerSupport({ user }) {
           // LATEST ACTIVE TICKET
           // ------------------------------------------
 
-          const latestTicket =
-            activeTickets[0];
+       const latestTicket =
+  activeTickets[0];
 
           if (cancelled) {
             return;

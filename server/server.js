@@ -646,24 +646,25 @@ app.get(
 // AI ACCESS
 // =====================================================
 
+// =====================================================
+// CREATE / REUSE SUPPORT TICKET
+// AI ACCESS
+// =====================================================
+
 app.post(
   "/api/support/tickets",
   async (req, res) => {
     try {
       const supportApiKey =
-        req.headers[
-          "x-support-api-key"
-        ];
+        req.headers["x-support-api-key"];
 
       if (
         !supportApiKey ||
-        supportApiKey !==
-          SUPPORT_API_KEY
+        supportApiKey !== SUPPORT_API_KEY
       ) {
         return res.status(401).json({
           ok: false,
-          error:
-            "Unauthorized",
+          error: "Unauthorized",
         });
       }
 
@@ -674,16 +675,17 @@ app.post(
         message,
       } = req.body;
 
-      if (
-        !firebaseUid ||
-        !message
-      ) {
+      if (!firebaseUid || !message) {
         return res.status(400).json({
           ok: false,
           error:
             "firebaseUid and message are required",
         });
       }
+
+      // -------------------------------------------------
+      // FIND CUSTOMER
+      // -------------------------------------------------
 
       const userResult =
         await pool.query(
@@ -695,19 +697,127 @@ app.post(
           [firebaseUid]
         );
 
-      if (
-        userResult.rows.length ===
-        0
-      ) {
+      if (userResult.rows.length === 0) {
         return res.status(404).json({
           ok: false,
-          error:
-            "Customer not found",
+          error: "Customer not found",
         });
       }
 
       const userId =
         userResult.rows[0].id;
+
+      // -------------------------------------------------
+      // CHECK FOR EXISTING ACTIVE TICKET
+      // -------------------------------------------------
+      // Business logic:
+      // open / in_progress ticket = reuse it
+      // resolved ticket = create a new ticket
+
+      const existingTicketResult =
+        await pool.query(
+          `
+          SELECT
+            id,
+            user_id,
+            subject,
+            status,
+            priority,
+            category,
+            created_at,
+            updated_at
+          FROM support_tickets
+          WHERE user_id = $1
+            AND status IN ('open', 'in_progress')
+          ORDER BY updated_at DESC
+          LIMIT 1
+          `,
+          [userId]
+        );
+
+      // -------------------------------------------------
+      // REUSE EXISTING ACTIVE TICKET
+      // -------------------------------------------------
+
+      if (existingTicketResult.rows.length > 0) {
+        const ticket =
+          existingTicketResult.rows[0];
+
+        const messageResult =
+          await pool.query(
+            `
+            INSERT INTO support_messages (
+              ticket_id,
+              sender_type,
+              message
+            )
+            VALUES (
+              $1,
+              'customer',
+              $2
+            )
+            RETURNING *
+            `,
+            [
+              ticket.id,
+              message,
+            ]
+          );
+
+        await pool.query(
+          `
+          UPDATE support_tickets
+          SET
+            updated_at = NOW()
+          WHERE id = $1
+          `,
+          [ticket.id]
+        );
+
+        // Customer-facing ticket number
+        const customerTicketNumberResult =
+          await pool.query(
+            `
+            SELECT COUNT(*)::int AS customer_ticket_number
+            FROM support_tickets
+            WHERE user_id = $1
+              AND id <= $2
+            `,
+            [
+              userId,
+              ticket.id,
+            ]
+          );
+
+        const customerTicketNumber =
+          customerTicketNumberResult
+            .rows[0]
+            ?.customer_ticket_number || 1;
+
+        ticket.customer_ticket_number =
+          customerTicketNumber;
+
+        console.log(
+          "♻️ Existing support ticket reused:",
+          ticket.id
+        );
+
+        return res.status(200).json({
+          ok: true,
+          reused: true,
+          ticket,
+          ticket_id: ticket.id,
+          customer_ticket_number:
+            customerTicketNumber,
+          message:
+            messageResult.rows[0],
+        });
+      }
+
+      // -------------------------------------------------
+      // NO ACTIVE TICKET
+      // CREATE NEW TICKET
+      // -------------------------------------------------
 
       const ticketResult =
         await pool.query(
@@ -742,9 +852,10 @@ app.post(
       const ticket =
         ticketResult.rows[0];
 
-      // Customer-facing ticket number:
-      // each customer starts from #1, while the database id
-      // remains unchanged for internal/API operations.
+      // -------------------------------------------------
+      // CUSTOMER TICKET NUMBER
+      // -------------------------------------------------
+
       const customerTicketNumberResult =
         await pool.query(
           `
@@ -753,15 +864,23 @@ app.post(
           WHERE user_id = $1
             AND id <= $2
           `,
-          [userId, ticket.id]
+          [
+            userId,
+            ticket.id,
+          ]
         );
 
       const customerTicketNumber =
-        customerTicketNumberResult.rows[0]
+        customerTicketNumberResult
+          .rows[0]
           ?.customer_ticket_number || 1;
 
       ticket.customer_ticket_number =
         customerTicketNumber;
+
+      // -------------------------------------------------
+      // SAVE FIRST CUSTOMER MESSAGE
+      // -------------------------------------------------
 
       const messageResult =
         await pool.query(
@@ -785,12 +904,13 @@ app.post(
         );
 
       console.log(
-        "✅ Support ticket created:",
+        "✅ New support ticket created:",
         ticket.id
       );
 
       return res.status(201).json({
         ok: true,
+        reused: false,
         ticket,
         ticket_id: ticket.id,
         customer_ticket_number:
@@ -798,9 +918,10 @@ app.post(
         message:
           messageResult.rows[0],
       });
+
     } catch (error) {
       console.error(
-        "Create support ticket error:",
+        "Create/reuse support ticket error:",
         error
       );
 
@@ -2019,15 +2140,69 @@ app.post(
       // -------------------------------------------------
 
       try {
-        const razorpayRefund =
-          await razorpay.payments.refund(
-            refund.razorpay_payment_id,
+        // -------------------------------------------------
+        // TEMPORARY RAZORPAY PAYMENT DIAGNOSTIC
+        // Check the exact payment before attempting refund.
+        // -------------------------------------------------
+
+        const paymentDetails =
+          await razorpay.payments.fetch(
+            refund.razorpay_payment_id
+          );
+
+        console.log(
+          "🔎 Razorpay Payment Details:",
+          {
+            id: paymentDetails.id,
+            amount: paymentDetails.amount,
+            status: paymentDetails.status,
+            captured: paymentDetails.captured,
+            amount_refunded:
+              paymentDetails.amount_refunded,
+            refund_status:
+              paymentDetails.refund_status,
+          }
+        );
+
+        console.log(
+          "Refund Payment ID:",
+          refund.razorpay_payment_id
+        );
+
+        console.log(
+          "Refund Amount Paise:",
+          Math.round(refundAmount * 100)
+        );
+
+        // -------------------------------------------------
+        // RAZORPAY REFUND VIA DIRECT REST API
+        // This bypasses the SDK only to diagnose the
+        // "invalid request sent" response.
+        // -------------------------------------------------
+
+        const refundAmountPaise = Math.round(
+          refundAmount * 100
+        );
+
+        const refundResponse =
+          await axios.post(
+            `https://api.razorpay.com/v1/payments/${refund.razorpay_payment_id}/refund`,
             {
-              amount: Math.round(
-                refundAmount * 100
-              ),
+              amount: refundAmountPaise,
+            },
+            {
+              auth: {
+                username: key_id,
+                password: key_secret,
+              },
+              headers: {
+                "Content-Type": "application/json",
+              },
             }
           );
+
+        const razorpayRefund =
+          refundResponse.data;
 
         console.log(
           "💰 Razorpay refund created:",
@@ -2077,8 +2252,16 @@ app.post(
       } catch (razorpayError) {
         console.error(
           "Razorpay refund error:",
-          razorpayError?.error ||
-            razorpayError
+          razorpayError?.response?.data ||
+            razorpayError?.error ||
+            razorpayError?.message ||
+            "Unknown Razorpay error"
+        );
+
+        console.error(
+          "Razorpay HTTP status:",
+          razorpayError?.response?.status ||
+            "unknown"
         );
 
         // -------------------------------------------------
@@ -2203,6 +2386,69 @@ app.post(
             refundId,
           ]
         );
+
+      // -------------------------------------------------
+      // NOTIFY CUSTOMER IN THEIR ACTIVE SUPPORT TICKET
+      // Refunds do not store ticket_id, so resolve the
+      // customer through the payment and use the latest
+      // active ticket for that customer.
+      // -------------------------------------------------
+
+      const ticketResult =
+        await pool.query(
+          `
+          SELECT st.id
+          FROM support_tickets st
+          JOIN users u
+            ON st.user_id = u.id
+          JOIN payments p
+            ON p.user_id = u.id
+          WHERE p.id = $1
+          ORDER BY st.updated_at DESC, st.created_at DESC
+          LIMIT 1
+          `,
+          [refund.payment_id]
+        );
+
+      if (ticketResult.rows.length > 0) {
+        const ticketId = ticketResult.rows[0].id;
+
+        await pool.query(
+          `
+          INSERT INTO support_messages (
+            ticket_id,
+            sender_type,
+            message
+          )
+          VALUES ($1, 'agent', $2)
+          `,
+          [
+            ticketId,
+            `❌ Refund request rejected. Reason: ${rejectionReason}`,
+          ]
+        );
+
+        await pool.query(
+          `
+          UPDATE support_tickets
+          SET
+            status = 'in_progress',
+            updated_at = NOW()
+          WHERE id = $1
+          `,
+          [ticketId]
+        );
+
+        console.log(
+          "📩 Refund rejection message sent to ticket:",
+          ticketId
+        );
+      } else {
+        console.warn(
+          "⚠️ Refund rejected, but no active support ticket was found for payment:",
+          refund.payment_id
+        );
+      }
 
       console.log(
         "❌ Refund rejected:",

@@ -117,7 +117,13 @@ function HumanSupportDashboard() {
       const data = await handleResponse(response);
 
       if (data.ok) {
-        setTickets(data.tickets || []);
+        const activeTickets = (data.tickets || []).filter(
+          (ticket) =>
+            ticket.status === "open" ||
+            ticket.status === "in_progress"
+        );
+
+        setTickets(activeTickets);
       } else {
         throw new Error(
           data.error || "Failed to fetch tickets"
@@ -344,7 +350,11 @@ function HumanSupportDashboard() {
       const data = await handleResponse(response);
 
       if (data.ok) {
-        setRefunds(data.refunds || []);
+        const pendingRefunds = (data.refunds || []).filter(
+          (refund) => refund.status === "requested"
+        );
+
+        setRefunds(pendingRefunds);
       } else {
         throw new Error(
           data.error || "Failed to fetch refunds"
