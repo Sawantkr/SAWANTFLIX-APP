@@ -2058,7 +2058,8 @@ app.post(
             r.reason,
 
             p.razorpay_payment_id,
-            p.amount AS payment_amount
+            p.amount AS payment_amount,
+            p.user_id
 
           FROM refunds r
 
@@ -2229,6 +2230,29 @@ app.post(
               refundId,
             ]
           );
+
+        // -------------------------------------------------
+        // EXPIRE SUBSCRIPTION AFTER FULL REFUND
+        // -------------------------------------------------
+
+        if (refundAmount === paymentAmount) {
+          await pool.query(
+            `
+            UPDATE subscriptions
+            SET
+              status = 'expired',
+              end_date = CURRENT_TIMESTAMP
+            WHERE user_id = $1
+              AND status = 'active'
+            `,
+            [refund.user_id]
+          );
+
+          console.log(
+            "✅ Subscription expired after full refund:",
+            refund.user_id
+          );
+        }
 
         return res.json({
           ok: true,
