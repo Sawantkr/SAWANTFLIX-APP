@@ -65,48 +65,123 @@ The application demonstrates how multiple services can work together to create a
 | 🚀 Deployment | Production deployment using Render |
 
 ---
+## 🏗️ System Architecture
 
-# 🏗️ System Architecture
+Sawantflix follows a full-stack architecture where the React frontend
+communicates with the Express backend for application, payment,
+database and customer-support operations.
 
-Sawantflix follows a modular client-server architecture.
+Customer-support requests are forwarded to the Agentic AI service,
+which uses FastAPI and LangGraph to classify the user's intent and
+route the request to specialized workflows such as Billing,
+Technical, or Account.
 
-The React frontend communicates with the Express backend through REST APIs, while external services such as Firebase, TMDB and Razorpay provide authentication, movie data and payment functionality.
+The AI system can use RAG and the knowledge base to generate
+context-aware responses. When an issue requires human intervention,
+the workflow escalates the request to the Human Support Dashboard,
+where an agent can reply, investigate the issue, approve/reject
+refunds, and resolve the ticket.
 
-```text
-                         ┌─────────────────────┐
-                         │      SAWANTFLIX     │
-                         │    React Frontend   │
-                         └──────────┬──────────┘
-                                    │
-             ┌──────────────────────┼──────────────────────┐
-             │                      │                      │
-             ▼                      ▼                      ▼
-      Firebase Auth             TMDB API             Express API
-             │                                             │
-             │                              ┌──────────────┼──────────────┐
-             │                              │              │              │
-             │                              ▼              ▼              ▼
-             │                         Razorpay       PostgreSQL      Support APIs
-             │
-             ▼
-       Authenticated User
-                                   
-                                   
-                         ┌─────────────────────┐
-                         │ Agentic AI Support  │
-                         │    FastAPI Backend  │
-                         └──────────┬──────────┘
-                                    │
-                                    ▼
-                               LangGraph
-                                    │
-                         ┌──────────┼──────────┐
-                         ▼          ▼          ▼
-                      Billing   Technical   Account
-                         │          │          │
-                         └──────────┼──────────┘
-                                    ▼
-                            Human Escalation
-                                    │
-                                    ▼
-                          Human Support Dashboard
+
+                                                  ┌──────────────────────────────┐
+                         │          SAWANTFLIX          │
+                         │        React Frontend       │
+                         │                              │
+                         │  • Movie Discovery           │
+                         │  • Search & Details           │
+                         │  • Authentication            │
+                         │  • Subscription               │
+                         │  • Customer Support           │
+                         └──────────────┬───────────────┘
+                                        │
+              ┌─────────────────────────┼─────────────────────────┐
+              │                         │                         │
+              ▼                         ▼                         ▼
+      ┌───────────────┐         ┌───────────────┐       ┌────────────────┐
+      │ Firebase Auth │         │    TMDB API   │       │  Express API   │
+      │               │         │               │       │ Node.js Server │
+      │ • Email       │         │ • Movies      │       └───────┬────────┘
+      │ • Google      │         │ • Search      │               │
+      │ • Phone OTP   │         │ • Trailers    │       ┌───────┼──────────┐
+      └───────┬───────┘         └───────────────┘       │       │          │
+              │                                         ▼       ▼          ▼
+              ▼                                    ┌────────┐ ┌────────┐ ┌──────────────┐
+       Authenticated User                          │Razorpay│ │Postgres│ │Support APIs │
+                                                   │        │ │        │ │              │
+                                                   │Payment │ │Database│ │Tickets      │
+                                                   │Refund  │ │        │ │Customer     │
+                                                   └────────┘ └────────┘ │Support      │
+                                                                        └──────┬───────┘
+                                                                               │
+                                                                               │
+                                                                               ▼
+                         ┌────────────────────────────────────────────────────────────┐
+                         │                  AGENTIC AI SUPPORT                        │
+                         │                       FastAPI                              │
+                         └────────────────────────────┬───────────────────────────────┘
+                                                      │
+                                                      ▼
+                                             ┌─────────────────┐
+                                             │    LangGraph    │
+                                             │ Workflow Engine │
+                                             └────────┬────────┘
+                                                      │
+                                                      ▼
+                                          ┌──────────────────────┐
+                                          │ Intent Classification │
+                                          └──────────┬───────────┘
+                                                     │
+                       ┌─────────────────────────────┼─────────────────────────────┐
+                       │                             │                             │
+                       ▼                             ▼                             ▼
+              ┌────────────────┐          ┌────────────────┐          ┌────────────────┐
+              │ Billing        │          │ Technical      │          │ Account        │
+              │ Workflow       │          │ Workflow       │          │ Workflow       │
+              │                │          │                │          │                │
+              │ • Payment      │          │ • App Issues   │          │ • Account      │
+              │ • Subscription │          │ • Technical    │          │ • Login        │
+              │ • Refund       │          │   Problems     │          │ • User Issues  │
+              └───────┬────────┘          └───────┬────────┘          └───────┬────────┘
+                      │                            │                            │
+                      └────────────────────────────┼────────────────────────────┘
+                                                   │
+                                                   ▼
+                                          ┌─────────────────┐
+                                          │       RAG       │
+                                          │ Knowledge Base  │
+                                          │                 │
+                                          │ • Account       │
+                                          │ • Billing       │
+                                          │ • FAQ           │
+                                          │ • Technical     │
+                                          └────────┬────────┘
+                                                   │
+                                                   ▼
+                                             ┌───────────┐
+                                             │  Groq LLM │
+                                             └─────┬─────┘
+                                                   │
+                                      ┌────────────┴────────────┐
+                                      │                         │
+                                      ▼                         ▼
+                               ┌─────────────┐          ┌──────────────────┐
+                               │   Resolved  │          │ Human Escalation │
+                               │   Response  │          └────────┬─────────┘
+                               └─────────────┘                   │
+                                                                ▼
+                                                       ┌─────────────────────┐
+                                                       │ Human Support       │
+                                                       │ Dashboard           │
+                                                       │                     │
+                                                       │ • View Tickets      │
+                                                       │ • Reply to Customer │
+                                                       │ • Approve Refund    │
+                                                       │ • Reject Refund     │
+                                                       │ • Resolve Ticket    │
+                                                       └──────────┬──────────┘
+                                                                  │
+                                                                  ▼
+                                                            ┌─────────────┐
+                                                            │  Customer   │
+                                                            │   Response  │
+                                                            └─────────────┘
