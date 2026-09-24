@@ -1,181 +1,112 @@
-# Sawantflix
+<div align="center">
 
-Netflix‑style streaming UI built with React, Vite, Tailwind, Firebase Auth, and TMDB. Includes a simple Express backend for Razorpay payments. The app supports email/password, Google OAuth, and phone OTP authentication; theme toggling; multilingual UI; hero banners with trailers; movie rows; search; and a payment page.
+# 🎬 SAWANTFLIX
 
-- Live App: `https://sawantflix-app-1.onrender.com`
+### A Full-Stack Netflix-Style Streaming Platform
 
+<p>
+  <a href="https://sawantflix-app-1.onrender.com">
+    <img src="https://img.shields.io/badge/🚀%20Live%20Demo-Sawantflix-00C853?style=for-the-badge" />
+  </a>
+  <a href="https://github.com/Sawantkr/SAWANTFLIX-APP">
+    <img src="https://img.shields.io/badge/💻%20Source%20Code-GitHub-181717?style=for-the-badge&logo=github" />
+  </a>
+</p>
 
-**Highlights**
-- Modern React app bootstrapped with Vite and Tailwind.
-- Authentication: email/password, Google, and phone OTP via Firebase.
-- Movie data fetched from TMDB (Trending, Top Rated, Upcoming, Search).
-- Hero banner with auto-rotating slides and trailer playback.
-- Movie modal with YouTube trailer and details.
-- i18n with English and Hindi resources (language switcher UI lists more).
-- Light/Dark theme toggle.
-- Payment page with Razorpay checkout (UPI demo flow) via Express backend.
+<p>
+  <img src="https://img.shields.io/badge/React-18-61DAFB?style=flat-square&logo=react&logoColor=black" />
+  <img src="https://img.shields.io/badge/Vite-5-646CFF?style=flat-square&logo=vite&logoColor=white" />
+  <img src="https://img.shields.io/badge/Node.js-Express-339933?style=flat-square&logo=node.js&logoColor=white" />
+  <img src="https://img.shields.io/badge/Firebase-Auth-FFCA28?style=flat-square&logo=firebase&logoColor=black" />
+  <img src="https://img.shields.io/badge/PostgreSQL-4169E1?style=flat-square&logo=postgresql&logoColor=white" />
+  <img src="https://img.shields.io/badge/Razorpay-Payments-528FF0?style=flat-square" />
+</p>
 
+<p>
+  A full-stack streaming-style web application featuring movie discovery,
+  authentication, subscriptions, Razorpay payments, refunds,
+  and AI-powered customer support with human escalation.
+</p>
 
-## Tech Stack
-- Frontend: `React 18`, `Vite 5`, `TailwindCSS`, `React Router`, `Axios`, `i18next`
-- Auth: `Firebase Auth` (email/password, Google, phone OTP)
-- Backend: `Express`, `cors`, `dotenv`, `Razorpay`
-- Build/Dev: `concurrently` for combined dev experience
+</div>
 
+---
 
-## Features
-- Authentication modal with:
-  - Sign In / Sign Up using email and password
-  - Google sign‑in
-  - Phone OTP with invisible reCAPTCHA (`#recaptcha-container`)
-- Responsive navbar with:
-  - Routes: Home, TV Shows, Movies, New & Popular, My List
-  - Search input with debounced TMDB queries
-  - Language selector (English, हिन्दी, Marathi, Español, Français)
-  - Theme toggle (light/dark)
-  - User menu with quick actions and a link to Payment page
-- Home page:
-  - Banner carousel that auto‑rotates and can play trailers
-  - Rows for Trending, Top Rated, Upcoming
-  - Conditional row for Search Results
-- Movie modal:
-  - YouTube trailer embed (fallback to poster)
-  - Title, date, rating, overview
-- Payment page:
-  - Select Basic, Standard, or Premium
-  - Razorpay checkout via backend `/api/create-order`
-  - Simple billing history in UI
-- Footer with common links and branding
+## ✨ What is Sawantflix?
 
+**Sawantflix** is a full-stack streaming-style web application inspired by modern OTT platforms.
 
-## Project Structure
-```
-Sawantflix-My-Contribution/
-├── server/                # Express backend (Razorpay APIs)
-│   ├── server.js
-│   ├── package.json
-│   └── package-lock.json
-├── src/                   # React frontend
-│   ├── api/tmdb.js        # TMDB API helpers
-│   ├── components/        # UI components (Navbar, Banner, AuthModal, etc.)
-│   ├── pages/             # Route components (TVShows, Movies, Payment, etc.)
-│   ├── firebase.js        # Firebase initialization & helpers
-│   ├── config.js          # API base selection (dev/prod)
-│   ├── App.jsx            # App routes and layout
-│   ├── main.jsx           # App bootstrap
-│   └── index.css          # Tailwind and global styles
-├── package.json           # Frontend scripts and deps
-├── vite.config.js
-├── tailwind.config.js
-└── README.md
-```
+The project combines a responsive React frontend with an Express.js backend, Firebase Authentication, TMDB movie data, Razorpay payment processing, PostgreSQL data storage, and an integrated Agentic AI customer-support system.
 
+The application demonstrates how multiple services can work together to create a complete end-to-end web application.
 
-## Environment Variables
+### 🚀 Live Demo
 
-Create a `.env` in the project root for frontend configuration (Vite uses `import.meta.env`):
+👉 **https://sawantflix-app-1.onrender.com**
 
-```
-VITE_TMDB_API_KEY=your_tmdb_api_key
+---
 
-VITE_FIREBASE_API_KEY=your_firebase_api_key
-VITE_FIREBASE_AUTH_DOMAIN=your_project.firebaseapp.com
-VITE_FIREBASE_PROJECT_ID=your_project_id
-VITE_FIREBASE_STORAGE_BUCKET=your_project.appspot.com
-VITE_FIREBASE_MESSAGING_SENDER_ID=your_sender_id
-VITE_FIREBASE_APP_ID=your_app_id
-```
+## 🎯 Key Features
 
-Create a `.env` in `server/` for backend configuration:
+| Feature | Description |
+|---|---|
+| 🎬 Movie Discovery | Trending, Top Rated, Upcoming and Search |
+| 🔐 Authentication | Email/Password, Google OAuth and Phone OTP |
+| 🌍 Multi-language UI | English and Hindi support |
+| 🌓 Theme | Light/Dark mode |
+| 🎞️ Trailers | YouTube trailer playback |
+| 🔎 Search | Movie search with TMDB |
+| 💳 Payments | Razorpay subscription checkout |
+| 💰 Refunds | Customer refund request and human approval workflow |
+| 🤖 AI Support | AI-powered customer support |
+| 👨‍💻 Human Support | Human agent escalation and ticket handling |
+| 🗄️ Database | PostgreSQL-backed application records |
+| 📱 Responsive UI | Responsive React interface |
+| 🚀 Deployment | Production deployment using Render |
 
-```
-PORT=5000
-RAZORPAY_KEY_ID=your_razorpay_key_id
-RAZORPAY_KEY_SECRET=your_razorpay_key_secret
-```
+---
 
-Notes:
-- `src/config.js` selects `API_BASE` by hostname:
-  - `localhost` → `http://localhost:5000`
-- The live app is at `https://sawantflix-app-1.onrender.com`. If your backend is hosted at a different URL, update `src/config.js` accordingly.
+# 🏗️ System Architecture
 
+Sawantflix follows a modular client-server architecture.
 
-## Scripts
+The React frontend communicates with the Express backend through REST APIs, while external services such as Firebase, TMDB and Razorpay provide authentication, movie data and payment functionality.
 
-Frontend `package.json` exposes combined dev and individual scripts:
-
-- `npm run dev` — run backend (nodemon) and frontend (Vite) together
-- `npm run frontend` — start Vite dev server
-- `npm run backend` — start backend via `server` package (nodemon)
-- `npm run build` — build frontend for production
-- `npm run preview` — preview the built frontend locally
-
-Backend `server/package.json`:
-- `npm run dev` — start `server.js` with nodemon
-- `npm start` — start `server.js` with Node
-
-
-## Getting Started
-
-Prerequisites:
-- Node.js 18+ (Vite 5 requires Node 18 or newer)
-- TMDB account and API key
-- Firebase project with Authentication enabled (Email/Password, Google, Phone)
-- Razorpay account and test keys (for payment testing)
-
-Setup:
-1. Clone the repo and navigate to the project directory.
-2. Create `.env` files as described above (frontend and `server/`).
-3. Install dependencies:
-   - `npm install`
-   - `npm install --prefix server`
-4. Run in development:
-   - `npm run dev` (recommended) — starts both frontend and backend
-   - or separately: `npm run frontend` and `npm run backend`
-5. Open `http://localhost:5173` (Vite default) and sign in to use the app.
-
-Production Build:
-- `npm run build` to build the frontend (`dist/`)
-- Serve the backend (`server/server.js`); it can be configured to serve static files if you deploy frontend assets with the backend.
-
-
-## Backend API (Razorpay)
-
-The Express backend provides payment endpoints:
-- `POST /api/create-order` — creates a Razorpay order; returns `{ orderId, amount, currency, keyId }`
-- `POST /api/verify-payment` — verifies Razorpay signature; returns `{ verified: boolean }`
-- `GET /api` — health check
-
-The frontend `Payment` page calls `POST /api/create-order` and launches Razorpay Checkout with UPI method for a demo flow.
-
-
-## Internationalization
-
-`src/components/i18n.js` initializes i18next with English (`en`) and Hindi (`hi`) translations for common navbar labels and placeholders. The navbar language selector shows additional options (Marathi, Spanish, French) that can be expanded by adding resources to `i18n.js`.
-
-
-## Authentication
-
-- Email/Password sign in and sign up
-- Google OAuth via `GoogleAuthProvider`
-- Phone OTP: uses invisible reCAPTCHA and `signInWithPhoneNumber`
-- The app waits for Firebase auth state; if unauthenticated, the `AuthModal` is displayed instead of the main content
-
-
-## TMDB Integration
-
-- `src/api/tmdb.js` uses `VITE_TMDB_API_KEY` and Axios to fetch:
-  - Trending (`/trending/movie/day`)
-  - Top Rated (`/movie/top_rated`)
-  - Upcoming (`/movie/upcoming`)
-  - Search (`/search/movie`)
-- Images use `https://image.tmdb.org/t/p/w500` and `original` sizes for banners.
-
-
-## Deployment
-
-- Frontend: deployed to `https://sawantflix-app-1.onrender.com`
-- Backend: set `API_BASE` in `src/config.js` to your backend URL. 
-- Common options: Render, Vercel (frontend), or any Node host for the backend.
-
-
+```text
+                         ┌─────────────────────┐
+                         │      SAWANTFLIX     │
+                         │    React Frontend   │
+                         └──────────┬──────────┘
+                                    │
+             ┌──────────────────────┼──────────────────────┐
+             │                      │                      │
+             ▼                      ▼                      ▼
+      Firebase Auth             TMDB API             Express API
+             │                                             │
+             │                              ┌──────────────┼──────────────┐
+             │                              │              │              │
+             │                              ▼              ▼              ▼
+             │                         Razorpay       PostgreSQL      Support APIs
+             │
+             ▼
+       Authenticated User
+                                   
+                                   
+                         ┌─────────────────────┐
+                         │ Agentic AI Support  │
+                         │    FastAPI Backend  │
+                         └──────────┬──────────┘
+                                    │
+                                    ▼
+                               LangGraph
+                                    │
+                         ┌──────────┼──────────┐
+                         ▼          ▼          ▼
+                      Billing   Technical   Account
+                         │          │          │
+                         └──────────┼──────────┘
+                                    ▼
+                            Human Escalation
+                                    │
+                                    ▼
+                          Human Support Dashboard
